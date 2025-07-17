@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.light(
           primary: const Color(0xFF0730E8), // Main brand color
           secondary: const Color(0xFF4D7CFF), // Secondary color
-          surface: Colors.white, // Background color for cards, etc.
+          surface: const Color.fromARGB(255, 255, 255, 255), // Background color for cards, etc.
           background: Colors.white, // Scaffold background
           onPrimary: Colors.white, // Text/icon color on primary color
           onSecondary: Colors.white, // Text/icon color on secondary color
@@ -36,7 +36,7 @@ class LandingPage extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isMobile = screenWidth < 600;
-    final isTablet = screenWidth >= 600 && screenWidth < 1200;
+    final isTablet = screenWidth >= 800 && screenWidth < 1200;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -490,7 +490,7 @@ class Product {
   final List<String> sizes;
   final String imageUrl;
   final String category;
-  final int stock;
+  int stock; // Made mutable
 
   Product({
     required this.name,
@@ -667,7 +667,16 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     setState(() {
       final product = products[index];
       final key = '${product.name}_$size';
-      
+
+      // Prevent adding more than available stock
+      int alreadyReserved = reservedProducts[key]?.quantity ?? 0;
+      if (alreadyReserved >= product.stock) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Not enough stock for ${product.name} (Size: $size)')),
+        );
+        return;
+      }
+
       if (reservedProducts.containsKey(key)) {
         reservedProducts[key] = SelectedProduct(
           product: product,
@@ -711,79 +720,98 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Your Reservation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Your Reservation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
+                  SizedBox(height: 16),
+                  if (reservedProducts.isEmpty)
+                    Text('No items selected', style: TextStyle(color: Colors.grey))
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: reservedProducts.length,
+                        itemBuilder: (context, index) {
+                          final key = reservedProducts.keys.elementAt(index);
+                          final sp = reservedProducts[key]!;
+
+                          return ListTile(
+                            title: Text(sp.product.name),
+                            subtitle: Text('Size: ${sp.size} | ₱${sp.product.price.toStringAsFixed(2)}'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.remove, size: 20),
+                                  onPressed: () {
+                                    _removeFromReservation(products.indexOf(sp.product), sp.size);
+                                    setModalState(() {}); // Refresh the bottom sheet
+                                  },
+                                ),
+                                Text(sp.quantity.toString()),
+                                IconButton(
+                                  icon: Icon(Icons.add, size: 20),
+                                  onPressed: () {
+                                    _addToReservation(products.indexOf(sp.product), sp.size);
+                                    setModalState(() {}); // Refresh the bottom sheet
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  if (reservedProducts.isNotEmpty && !isDesktop)
+                    ElevatedButton(
+                      child: Text('Proceed to Reservation'),
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        // Await for result from ReservationFormScreen
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReservationFormScreen(
+                              selectedProducts: reservedProducts.values.toList(),
+                              onReservationSuccess: _deductStocksAfterReservation,
+                            ),
+                          ),
+                        );
+                        // Optionally handle result if needed
+                      },
+                    ),
                 ],
               ),
-              SizedBox(height: 16),
-              if (reservedProducts.isEmpty)
-                Text('No items selected', style: TextStyle(color: Colors.grey))
-              else
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: reservedProducts.length,
-                    itemBuilder: (context, index) {
-                      final key = reservedProducts.keys.elementAt(index);
-                      final sp = reservedProducts[key]!;
-                      return ListTile(
-                        title: Text(sp.product.name),
-                        subtitle: Text('Size: ${sp.size} | ₱${sp.product.price.toStringAsFixed(2)}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.remove, size: 20),
-                              onPressed: () => _removeFromReservation(
-                                products.indexOf(sp.product), 
-                                sp.size
-                              ),
-                            ),
-                            Text(sp.quantity.toString()),
-                            IconButton(
-                              icon: Icon(Icons.add, size: 20),
-                              onPressed: () => _addToReservation(
-                                products.indexOf(sp.product), 
-                                sp.size
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              if (reservedProducts.isNotEmpty && !isDesktop)
-                ElevatedButton(
-                  child: Text('Proceed to Reservation'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ReservationFormScreen(
-                          selectedProducts: reservedProducts.values.toList(),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  // Deduct stocks after reservation is successful
+  void _deductStocksAfterReservation(List<SelectedProduct> reservedList) {
+    setState(() {
+      for (var sp in reservedList) {
+        sp.product.stock -= sp.quantity;
+        if (sp.product.stock < 0) sp.product.stock = 0;
+      }
+      reservedProducts.clear();
+    });
   }
 
   @override
@@ -798,7 +826,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       floatingActionButton: FloatingActionButton.extended(
         label: Text('Reserve (${reservedProducts.values.fold(0, (sum, sp) => sum + sp.quantity)})'),
         icon: Icon(Icons.shopping_cart),
-        onPressed: () {
+        onPressed: () async {
           if (reservedProducts.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Please select at least one product.')),
@@ -807,14 +835,17 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           }
           
           if (isDesktop) {
-            Navigator.push(
+            // Await for result from ReservationFormScreen
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ReservationFormScreen(
                   selectedProducts: reservedProducts.values.toList(),
+                  onReservationSuccess: _deductStocksAfterReservation,
                 ),
               ),
             );
+            // Optionally handle result if needed
           } else {
             _showReservationBottomSheet();
           }
@@ -887,89 +918,106 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                             return Center(
                               child: Card(
                                 margin: EdgeInsets.zero,
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final containerWidth = constraints.maxWidth;
-                                    final imageHeight = containerWidth * 0.6;
-                                    final imageMargin = containerWidth * 0.08;
-                                    return SizedBox(
-                                      width: containerWidth,
-                                      height: cardHeight,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                          SizedBox(height: imageMargin),
-                                          Container(
-                                            height: imageHeight,
-                                            width: containerWidth - imageMargin * 2,
-                                            margin: EdgeInsets.symmetric(horizontal: imageMargin),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[300],
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Center(
-                                              child: FittedBox(
-                                                fit: BoxFit.contain,
-                                                child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: 6),
-                                          Text(
-                                            product.name,
-                                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
-                                          SizedBox(height: 2),
-                                          Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                          Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text('Size:', style: TextStyle(fontSize: 12)),
-                                              SizedBox(width: 2),
-                                              DropdownButton<String>(
-                                                value: currentSize,
-                                                items: product.sizes
-                                                    .map((size) => DropdownMenuItem(
-                                                          value: size,
-                                                          child: Text(size, style: TextStyle(fontSize: 12)),
-                                                        ))
-                                                    .toList(),
-                                                onChanged: (val) {
-                                                  // Size selection handled in the add/remove functions
-                                                },
-                                                style: TextStyle(fontSize: 12, color: Colors.black),
-                                                underline: SizedBox(),
-                                              ),
-                                            ],
-                                          ),
-                                          Spacer(),
-                                          Padding(
-                                            padding: const EdgeInsets.only(bottom: 8.0),
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFFe3f0ff),
+                                        Color(0xFFb3d1ff),
+                                      ],
+                                    ),
+                                  ),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final containerWidth = constraints.maxWidth;
+                                      final imageHeight = containerWidth * 0.6;
+                                      final imageMargin = containerWidth * 0.08;
+                                      return SizedBox(
+                                        width: containerWidth,
+                                        height: cardHeight,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            SizedBox(height: imageMargin),
+                                            Container(
+                                              height: imageHeight,
+                                              width: containerWidth - imageMargin * 2,
+                                              margin: EdgeInsets.symmetric(horizontal: imageMargin),
                                               decoration: BoxDecoration(
-                                                color: Colors.blue,
-                                                shape: BoxShape.circle,
+                                                color: Colors.grey[300],
+                                                borderRadius: BorderRadius.circular(10),
                                               ),
-                                              child: IconButton(
-                                                icon: Icon(Icons.add, color: Colors.white),
-                                                onPressed: () {
-                                                  _addToReservation(index, currentSize);
-                                                },
+                                              child: Center(
+                                                child: FittedBox(
+                                                  fit: BoxFit.contain,
+                                                  child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                            SizedBox(height: 6),
+                                            Text(
+                                              product.name,
+                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                              textAlign: TextAlign.center,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 2),
+                                            Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
+                                            SizedBox(height: 2),
+                                            Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                            Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text('Size:', style: TextStyle(fontSize: 12)),
+                                                SizedBox(width: 2),
+                                                DropdownButton<String>(
+                                                  value: currentSize,
+                                                  items: product.sizes
+                                                      .map((size) => DropdownMenuItem(
+                                                            value: size,
+                                                            child: Text(size, style: TextStyle(fontSize: 12)),
+                                                          ))
+                                                      .toList(),
+                                                  onChanged: (val) {
+                                                    // Size selection handled in the add/remove functions
+                                                  },
+                                                  style: TextStyle(fontSize: 12, color: Colors.black),
+                                                  underline: SizedBox(),
+                                                ),
+                                              ],
+                                            ),
+                                            Spacer(),
+                                            Padding(
+                                              padding: const EdgeInsets.only(bottom: 8.0),
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blue,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: IconButton(
+                                                  icon: Icon(Icons.add, color: Colors.white),
+                                                  onPressed: () {
+                                                    _addToReservation(index, currentSize);
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
                             );
@@ -1102,101 +1150,118 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       return Center(
                         child: Card(
                           margin: EdgeInsets.zero,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final containerWidth = constraints.maxWidth;
-                              final imageHeight = containerWidth * 0.6;
-                              final imageMargin = containerWidth * 0.08;
-                              return SizedBox(
-                                width: containerWidth,
-                                height: cardHeight,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    SizedBox(height: imageMargin),
-                                    Container(
-                                      height: imageHeight,
-                                      width: containerWidth - imageMargin * 2,
-                                      margin: EdgeInsets.symmetric(horizontal: imageMargin),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Center(
-                                        child: FittedBox(
-                                          fit: BoxFit.contain,
-                                          child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFe3f0ff),
+                                  Color(0xFFb3d1ff),
+                                ],
+                              ),
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final containerWidth = constraints.maxWidth;
+                                final imageHeight = containerWidth * 0.6;
+                                final imageMargin = containerWidth * 0.08;
+                                return SizedBox(
+                                  width: containerWidth,
+                                  height: cardHeight,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      SizedBox(height: imageMargin),
+                                      Container(
+                                        height: imageHeight,
+                                        width: containerWidth - imageMargin * 2,
+                                        margin: EdgeInsets.symmetric(horizontal: imageMargin),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Center(
+                                          child: FittedBox(
+                                            fit: BoxFit.contain,
+                                            child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(height: 6),
-                                    Text(
-                                      product.name,
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
-                                    SizedBox(height: 2),
-                                    Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                    Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text('Size:', style: TextStyle(fontSize: 12)),
-                                        SizedBox(width: 2),
-                                        DropdownButton<String>(
-                                          value: currentSize,
-                                          items: product.sizes
-                                              .map((size) => DropdownMenuItem(
-                                                    value: size,
-                                                    child: Text(size, style: TextStyle(fontSize: 12)),
-                                                  ))
-                                              .toList(),
-                                          onChanged: (val) {
-                                            // Size selection handled in the add/remove functions
-                                          },
-                                          style: TextStyle(fontSize: 12, color: Colors.black),
-                                          underline: SizedBox(),
-                                        ),
-                                      ],
-                                    ),
-                                    Spacer(),
-                                    Padding(
-                                        padding: EdgeInsets.only(bottom: 6.0),
-                                        child: LayoutBuilder(
-                                        builder: (context, constraints) {
-                                        // Calculate responsive size based on screen width
-                                        final screenWidth = MediaQuery.of(context).size.width;
-                                        final buttonSize = screenWidth < 700 ? 20.0 : 40.0; // Smaller on very small devices
-                                        final iconSize = screenWidth < 700 ? 10.0 : 20.0; // Smaller icon on small devices
+                                      SizedBox(height: 6),
+                                      Text(
+                                        product.name,
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 2),
+                                      Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
+                                      SizedBox(height: 2),
+                                      Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                      Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text('Size:', style: TextStyle(fontSize: 12)),
+                                          SizedBox(width: 2),
+                                          DropdownButton<String>(
+                                            value: currentSize,
+                                            items: product.sizes
+                                                .map((size) => DropdownMenuItem(
+                                                      value: size,
+                                                      child: Text(size, style: TextStyle(fontSize: 12)),
+                                                    ))
+                                                .toList(),
+                                            onChanged: (val) {
+                                              // Size selection handled in the add/remove functions
+                                            },
+                                            style: TextStyle(fontSize: 12, color: Colors.black),
+                                            underline: SizedBox(),
+                                          ),
+                                        ],
+                                      ),
+                                      Spacer(),
+                                      Padding(
+                                          padding: EdgeInsets.only(bottom: 6.0),
+                                          child: LayoutBuilder(
+                                          builder: (context, constraints) {
+                                          // Calculate responsive size based on screen width
+                                          final screenWidth = MediaQuery.of(context).size.width;
+                                          final buttonSize = screenWidth < 700 ? 20.0 : 40.0; // Smaller on very small devices
+                                          final iconSize = screenWidth < 700 ? 10.0 : 20.0; // Smaller icon on small devices
 
-                                          return Container(
-                                            width: buttonSize,
-                                            height: buttonSize,
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: IconButton(
-                                              icon: Icon(Icons.add, 
-                                              color: Colors.white, 
-                                              size: iconSize),
-                                              padding: EdgeInsets.zero, // Remove default padding
-                                              onPressed: () {
-                                                _addToReservation(index, currentSize);
-                                              },
-                                            ),
-                                          );
-                                        },
+                                            return Container(
+                                              width: buttonSize,
+                                              height: buttonSize,
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: IconButton(
+                                                icon: Icon(Icons.add, 
+                                                color: Colors.white, 
+                                                size: iconSize),
+                                                padding: EdgeInsets.zero, // Remove default padding
+                                                onPressed: () {
+                                                  _addToReservation(index, currentSize);
+                                                },
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       );
@@ -1226,7 +1291,13 @@ class SelectedProduct {
 
 class ReservationFormScreen extends StatefulWidget {
   final List<SelectedProduct> selectedProducts;
-  const ReservationFormScreen({super.key, required this.selectedProducts});
+  final void Function(List<SelectedProduct>)? onReservationSuccess;
+
+  const ReservationFormScreen({
+    super.key,
+    required this.selectedProducts,
+    this.onReservationSuccess,
+  });
 
   @override
   _ReservationFormScreenState createState() => _ReservationFormScreenState();
@@ -1271,58 +1342,65 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   }
 
   void _submitForm() {
-  if (_formKey.currentState!.validate()) {
-    if (selectedDate == null || selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select both date and time for pickup')),
-      );
-      return;
-    }
-    
-    _formKey.currentState!.save();
-    
-    if (!_validatePhoneNumber(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a valid Philippine phone number starting with 09 (11 digits)')),
-      );
-      return;
-    }
-    
-    // Show confirmation dialog before proceeding
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirm Reservation'),
-        content: Text('Are you sure you want to submit your reservation?'),
-        actions: [
-          TextButton(
-            child: Text('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text('Confirm'),
-            onPressed: () {
-              Navigator.pop(context); // Close the dialog
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ReceiptScreen(
-                    selectedProducts: widget.selectedProducts,
-                    name: name,
-                    email: email,
-                    phone: phone,
-                    date: selectedDate!,
-                    time: selectedTime!,
+    if (_formKey.currentState!.validate()) {
+      if (selectedDate == null || selectedTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please select both date and time for pickup')),
+        );
+        return;
+      }
+      
+      _formKey.currentState!.save();
+      
+      if (!_validatePhoneNumber(phone)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please enter a valid Philippine phone number starting with 09 (11 digits)')),
+        );
+        return;
+      }
+      
+      // Show confirmation dialog before proceeding
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Confirm Reservation'),
+          content: Text('Are you sure you want to submit your reservation?'),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            TextButton(
+              child: Text('Confirm'),
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+
+                // Deduct stocks in parent (ProductCatalogScreen) via callback
+                if (widget.onReservationSuccess != null) {
+                  widget.onReservationSuccess!(widget.selectedProducts);
+                }
+
+                // Go to receipt screen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReceiptScreen(
+                      selectedProducts: widget.selectedProducts,
+                      name: name,
+                      email: email,
+                      phone: phone,
+                      date: selectedDate!,
+                      time: selectedTime!,
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -1603,16 +1681,6 @@ class ReceiptScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.print),
-                      label: Text('Print'),
-                      onPressed: () {
-                        // Print functionality would go here
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Printing receipt...')),
-                        );
-                      },
-                    ),
                     ElevatedButton.icon(
                       icon: Icon(Icons.share),
                       label: Text('Share'),

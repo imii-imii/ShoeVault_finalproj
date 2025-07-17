@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'loginpage.dart' as login;
 
 void main() {
   runApp(MyApp());
@@ -65,7 +64,7 @@ class _OwnerPageState extends State<OwnerPage> {
 
   final List<Map<String, dynamic>> _drawerItems = [
     {'icon': Icons.analytics, 'title' : 'Dashboard'},
-    {'icon': Icons.assignment, 'title' : 'Cancellation Report'}
+    {'icon': Icons.assignment, 'title' : 'Reports'}
   ];
 
   void _onSelectItem(int index) {
@@ -75,14 +74,6 @@ class _OwnerPageState extends State<OwnerPage> {
     Navigator.pop(context);
   }
 
-  void _logout() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => login.MyApp()),
-      (Route<dynamic> route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,89 +81,16 @@ class _OwnerPageState extends State<OwnerPage> {
         title: Text(_drawerItems[_selectedDrawerIndex]['title']), // Dynamic title
       ),
       drawer: Drawer(
-        child: Column(
-          children: [
-            // Header
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.store,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'ShoeVault Admin',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Batangas',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Menu items
-            Expanded(
-              child: ListView.builder(
-                itemCount: _drawerItems.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: Icon(_drawerItems[index]['icon']),
-                    title: Text(_drawerItems[index]['title']),
-                    selected: index == _selectedDrawerIndex,
-                    onTap: () => _onSelectItem(index),
-                  );
-                },
-              ),
-            ),
-            // Logout button at bottom
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.logout, color: Colors.red),
-              title: Text(
-                'Logout',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Logout'),
-                      content: Text('Are you sure you want to logout?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _logout();
-                          },
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: Text('Logout'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
-          ],
+        child: ListView.builder(
+          itemCount: _drawerItems.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              leading: Icon(_drawerItems[index]['icon']),
+              title: Text(_drawerItems[index]['title']),
+              selected: index == _selectedDrawerIndex,
+              onTap: () => _onSelectItem(index),
+            );
+          },
         ),
       ),
       body: _pages[_selectedDrawerIndex],
@@ -187,103 +105,6 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   int selectedRange = 0; // 0: Week, 1: Month, 2: Quarter
-
-  // Data for different time ranges
-  Map<String, dynamic> getDataForRange() {
-    switch (selectedRange) {
-      case 0: // Week
-        return {
-          'totalReservations': '247',
-          'completedPickups': '189',
-          'pendingPickups': '35',
-          'cancelled': '23',
-          'chartTitle': 'Daily Reservations vs Pickups during June 6-12',
-          'chartLabels': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          'chartData': [
-            {'reservations': 40.0, 'pickups': 25.0},
-            {'reservations': 35.0, 'pickups': 30.0},
-            {'reservations': 30.0, 'pickups': 28.0},
-            {'reservations': 50.0, 'pickups': 35.0},
-            {'reservations': 70.0, 'pickups': 45.0},
-            {'reservations': 75.0, 'pickups': 60.0},
-            {'reservations': 30.0, 'pickups': 20.0},
-          ],
-        };
-      case 1: // Month
-        return {
-          'totalReservations': '1,247',
-          'completedPickups': '1,089',
-          'pendingPickups': '89',
-          'cancelled': '69',
-          'chartTitle': 'Weekly Reservations vs Pickups during June 2025',
-          'chartLabels': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-          'chartData': [
-            {'reservations': 280.0, 'pickups': 245.0},
-            {'reservations': 320.0, 'pickups': 290.0},
-            {'reservations': 310.0, 'pickups': 275.0},
-            {'reservations': 337.0, 'pickups': 279.0},
-          ],
-        };
-      case 2: // Quarter
-        return {
-          'totalReservations': '3,741',
-          'completedPickups': '3,267',
-          'pendingPickups': '267',
-          'cancelled': '207',
-          'chartTitle': 'Monthly Reservations vs Pickups during the 2nd Quarter of 2025',
-          'chartLabels': ['April', 'May', 'June'],
-          'chartData': [
-            {'reservations': 1100.0, 'pickups': 980.0},
-            {'reservations': 1247.0, 'pickups': 1089.0},
-            {'reservations': 1394.0, 'pickups': 1198.0},
-          ],
-        };
-      default:
-        return getDataForRange();
-    }
-  }
-
-  double _getMaxYValue() {
-    final chartData = getDataForRange()['chartData'] as List<Map<String, double>>;
-    double maxVal = 0;
-    for (var data in chartData) {
-      if (data['reservations']! > maxVal) maxVal = data['reservations']!;
-      if (data['pickups']! > maxVal) maxVal = data['pickups']!;
-    }
-    
-    // Round up to nearest nice number based on scale
-    if (maxVal < 100) {
-      return (maxVal * 1.2).ceilToDouble();
-    } else if (maxVal < 1000) {
-      return ((maxVal * 1.2) / 100).ceil() * 100;
-    } else {
-      return ((maxVal * 1.2) / 500).ceil() * 500;
-    }
-  }
-
-  double _getYAxisInterval() {
-    double maxY = _getMaxYValue();
-    if (maxY <= 100) {
-      return 20;
-    } else if (maxY <= 500) {
-      return 100;
-    } else if (maxY <= 1000) {
-      return 200;
-    } else {
-      return 500;
-    }
-  }
-
-  List<BarChartGroupData> _getBarGroups() {
-    final chartData = getDataForRange()['chartData'] as List<Map<String, double>>;
-    return chartData.asMap().entries.map((entry) {
-      return _makeBarGroup(
-        entry.key,
-        entry.value['reservations']!,
-        entry.value['pickups']!,
-      );
-    }).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -313,9 +134,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 selectedRange = index;
               });
             },
-            borderRadius: BorderRadius.circular(15),
-            fillColor: Colors.blue,
-            selectedColor: Colors.white,
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -336,7 +154,6 @@ class _DashboardPageState extends State<DashboardPage> {
           LayoutBuilder(
             builder: (context, constraints) {
               bool isMobile = constraints.maxWidth < 600;
-              final data = getDataForRange();
               
               return GridView.count(
                 crossAxisCount: isMobile ? 1 : 2,
@@ -349,28 +166,28 @@ class _DashboardPageState extends State<DashboardPage> {
               _buildSummaryCard(
                 icon: Icons.inventory_2,
                 label: 'Total Reservations',
-                value: data['totalReservations'],
+                value: '1247',
                 color: Colors.blue[50],
                 iconColor: Colors.blue,
               ),
               _buildSummaryCard(
                 icon: Icons.people,
                 label: 'Completed Pickups',
-                value: data['completedPickups'],
+                value: '1089',
                 color: Colors.green[50],
                 iconColor: Colors.green,
               ),
               _buildSummaryCard(
                 icon: Icons.access_time,
                 label: 'Pending Pickups',
-                value: data['pendingPickups'],
+                value: '89',
                 color: Colors.orange[50],
                 iconColor: Colors.orange,
               ),
               _buildSummaryCard(
                 icon: Icons.trending_up,
                 label: 'Cancelled',
-                value: data['cancelled'],
+                value: '69',
                 color: Colors.red[50],
                 iconColor: Colors.red,
               ),
@@ -380,58 +197,27 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
           SizedBox(height: 24),
           Text(
-            getDataForRange()['chartTitle'],
+            'Daily Reservations vs Pickups',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: 8),
-          Container(
-            height: 300, // Fixed height instead of aspect ratio
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+          AspectRatio(
+            aspectRatio: 1.7,
             child: BarChart(
-              key: ValueKey(selectedRange), // Add key for smooth transitions
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: _getMaxYValue(),
+                maxY: 80,
                 barTouchData: BarTouchData(enabled: false),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true, 
-                      reservedSize: 50, // Increased from 28 to 50
-                      interval: _getYAxisInterval(),
-                    ),
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 28),
                   ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 40, // Added reserved space for bottom labels
                       getTitlesWidget: (value, meta) {
-                        final labels = getDataForRange()['chartLabels'] as List<String>;
-                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              labels[value.toInt()],
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          );
-                        }
-                        return Text('');
+                        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        return Text(days[value.toInt()]);
                       },
                     ),
                   ),
@@ -440,7 +226,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 gridData: FlGridData(show: true),
                 borderData: FlBorderData(show: false),
-                barGroups: _getBarGroups(),
+                barGroups: [
+                  _makeBarGroup(0, 40, 25),
+                  _makeBarGroup(1, 35, 30),
+                  _makeBarGroup(2, 30, 28),
+                  _makeBarGroup(3, 50, 35),
+                  _makeBarGroup(4, 70, 45),
+                  _makeBarGroup(5, 75, 60),
+                  _makeBarGroup(6, 30, 20),
+                ],
               ),
             ),
           ),
@@ -528,8 +322,6 @@ class ReportPage extends StatefulWidget {
 class _ReportPageState extends State<ReportPage> {
   String selectedStatus = 'All Status';
   List<String> statusOptions = ['All Status', 'Pending', 'Completed', 'Cancelled'];
-  String searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
   
   List<Map<String, dynamic>> reservations = [
     {
@@ -576,107 +368,7 @@ class _ReportPageState extends State<ReportPage> {
       'status': 'Cancelled',
       'days': '14 days overdue'
     },
-    {
-      'id': 'REV-005',
-      'customer': 'Ivan Miguel Doller',
-      'email': 'ivanmigueldoller@email.com',
-      'shoe': 'Nike Air Force 1',
-      'size': 'Size 41',
-      'date': '2025-06-16',
-      'pickup': '2025-06-22',
-      'status': 'Completed',
-      'days': 'Completed'
-    },
   ];
-
-  void _deleteReservation(String reservationId) {
-    setState(() {
-      reservations.removeWhere((reservation) => reservation['id'] == reservationId);
-    });
-    
-    // Show a confirmation message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Reservation $reservationId has been deleted'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(String reservationId, String customerName) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Delete Reservation'),
-          content: Text('Are you sure you want to delete the reservation for $customerName?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteReservation(reservationId);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  List<Map<String, dynamic>> get filteredReservations {
-    List<Map<String, dynamic>> filtered = reservations;
-    
-    // Filter by status
-    if (selectedStatus != 'All Status') {
-      filtered = filtered.where((reservation) => reservation['status'] == selectedStatus).toList();
-    }
-    
-    // Filter by search query
-    if (searchQuery.isNotEmpty) {
-      filtered = filtered.where((reservation) {
-        final query = searchQuery.toLowerCase();
-        return reservation['customer'].toLowerCase().contains(query) ||
-               reservation['email'].toLowerCase().contains(query) ||
-               reservation['shoe'].toLowerCase().contains(query) ||
-               reservation['id'].toLowerCase().contains(query) ||
-               reservation['size'].toLowerCase().contains(query);
-      }).toList();
-    }
-    
-    return filtered;
-  }
-
-  int get overdueCount {
-    return reservations.where((reservation) => 
-      reservation['status'] == 'Cancelled' && 
-      reservation['days'].contains('overdue')
-    ).length;
-  }
-
-  int get expiringTodayCount {
-    return reservations.where((reservation) => 
-      reservation['status'] == 'Expired Today'
-    ).length;
-  }
-
-  int get completedCount {
-    return reservations.where((reservation) => 
-      reservation['status'] == 'Completed'
-    ).length;
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -720,7 +412,7 @@ class _ReportPageState extends State<ReportPage> {
                   _buildStatCard(
                     icon: Icons.warning,
                     title: 'Overdue Reservations',
-                    value: overdueCount.toString(),
+                    value: '4',
                     color: Colors.orange,
                     bgColor: Colors.orange[50]!,
                   ),
@@ -734,14 +426,14 @@ class _ReportPageState extends State<ReportPage> {
                   _buildStatCard(
                     icon: Icons.access_time,
                     title: 'Expiring Today',
-                    value: expiringTodayCount.toString(),
+                    value: '1',
                     color: Colors.orange,
                     bgColor: Colors.orange[50]!,
                   ),
                   _buildStatCard(
                     icon: Icons.rotate_left,
-                    title: 'Total Reservations',
-                    value: reservations.length.toString(),
+                    title: 'Due At Risk',
+                    value: '5',
                     color: Colors.blue,
                     bgColor: Colors.blue[50]!,
                   ),
@@ -756,26 +448,9 @@ class _ReportPageState extends State<ReportPage> {
             children: [
               Expanded(
                 child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
                   decoration: InputDecoration(
-                    hintText: 'Search by customer, email, shoe, or ID...',
+                    hintText: 'Search reservations...',
                     prefixIcon: Icon(Icons.search),
-                    suffixIcon: searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear),
-                            onPressed: () {
-                              setState(() {
-                                searchQuery = '';
-                                _searchController.clear();
-                              });
-                            },
-                          )
-                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -820,26 +495,6 @@ class _ReportPageState extends State<ReportPage> {
           ),
           SizedBox(height: 16),
           
-          // Search results indicator
-          if (searchQuery.isNotEmpty)
-            Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Row(
-                children: [
-                  Icon(Icons.search, size: 16, color: Colors.grey[600]),
-                  SizedBox(width: 8),
-                  Text(
-                    'Found ${filteredReservations.length} result${filteredReservations.length != 1 ? 's' : ''} for "$searchQuery"',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
           // Action Buttons
           Row(
             children: [
@@ -873,10 +528,6 @@ class _ReportPageState extends State<ReportPage> {
             builder: (context, constraints) {
               bool isMobile = constraints.maxWidth < 800;
               
-              if (filteredReservations.isEmpty) {
-                return _buildEmptyState();
-              }
-              
               if (isMobile) {
                 return _buildMobileReservationList();
               } else {
@@ -884,57 +535,6 @@ class _ReportPageState extends State<ReportPage> {
               }
             },
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            searchQuery.isNotEmpty ? Icons.search_off : Icons.inbox_outlined,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          SizedBox(height: 16),
-          Text(
-            searchQuery.isNotEmpty 
-                ? 'No reservations found for "$searchQuery"'
-                : 'No reservations found',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 8),
-          Text(
-            searchQuery.isNotEmpty 
-                ? 'Try adjusting your search terms or check the status filter'
-                : 'Reservations will appear here once they are created',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (searchQuery.isNotEmpty) ...[
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  searchQuery = '';
-                  _searchController.clear();
-                });
-              },
-              child: Text('Clear Search'),
-            ),
-          ],
         ],
       ),
     );
@@ -983,7 +583,7 @@ class _ReportPageState extends State<ReportPage> {
 
   Widget _buildMobileReservationList() {
     return Column(
-      children: filteredReservations.map((reservation) {
+      children: reservations.map((reservation) {
         return Card(
           margin: EdgeInsets.only(bottom: 12),
           child: Padding(
@@ -1065,10 +665,7 @@ class _ReportPageState extends State<ReportPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      onPressed: () => _showDeleteConfirmation(
-                        reservation['id'],
-                        reservation['customer'],
-                      ),
+                      onPressed: () {},
                       icon: Icon(Icons.close, color: Colors.red),
                       iconSize: 20,
                     ),
@@ -1100,7 +697,7 @@ class _ReportPageState extends State<ReportPage> {
           DataColumn(label: Text('STATUS')),
           DataColumn(label: Text('ACTIONS')),
         ],
-        rows: filteredReservations.map((reservation) {
+        rows: reservations.map((reservation) {
           return DataRow(
             cells: [
               DataCell(
@@ -1152,10 +749,7 @@ class _ReportPageState extends State<ReportPage> {
               DataCell(_buildStatusChip(reservation['status'])),
               DataCell(
                 IconButton(
-                  onPressed: () => _showDeleteConfirmation(
-                    reservation['id'],
-                    reservation['customer'],
-                  ),
+                  onPressed: () {},
                   icon: Icon(Icons.close, color: Colors.red),
                   iconSize: 20,
                 ),
