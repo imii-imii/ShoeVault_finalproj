@@ -4,61 +4,7 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  State<MyApp> createState() => _MyAppState();
-  
-  static _MyAppState? of(BuildContext context) =>
-      context.findAncestorStateOfType<_MyAppState>();
-}
-
-class _MyAppState extends State<MyApp> {
-  ThemeMode _themeMode = ThemeMode.system;
-
-  void toggleTheme() {
-    setState(() {
-      switch (_themeMode) {
-        case ThemeMode.system:
-          _themeMode = ThemeMode.light;
-          break;
-        case ThemeMode.light:
-          _themeMode = ThemeMode.dark;
-          break;
-        case ThemeMode.dark:
-          _themeMode = ThemeMode.system;
-          break;
-      }
-    });
-  }
-
-  String get currentThemeLabel {
-    switch (_themeMode) {
-      case ThemeMode.system:
-        return 'System';
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-    }
-  }
-
-  IconData get currentThemeIcon {
-    switch (_themeMode) {
-      case ThemeMode.system:
-        return Icons.brightness_auto;
-      case ThemeMode.light:
-        return Icons.light_mode;
-      case ThemeMode.dark:
-        return Icons.dark_mode;
-    }
-  }
-
-  void setThemeMode(ThemeMode themeMode) {
-    setState(() {
-      _themeMode = themeMode;
-    });
-  }
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -74,22 +20,8 @@ class _MyAppState extends State<MyApp> {
           onSurface: Colors.black87, // Default text color
         ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Inter',
+        fontFamily: 'Open Sans',
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
-          secondary: const Color(0xFF6B8FFF), // Secondary color for dark mode
-          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
-          background: const Color(0xFF121212), // Scaffold background
-          onPrimary: Colors.white, // Text/icon color on primary color
-          onSecondary: Colors.white, // Text/icon color on secondary color
-          onSurface: Colors.white, // Default text color
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Inter',
-      ),
-      themeMode: _themeMode, // Use controlled theme mode
       home: LandingPage(),
       debugShowCheckedModeBanner: false,
     );
@@ -112,7 +44,8 @@ class LandingPage extends StatelessWidget {
           children: [
             // Hero Section
             Container(
-              height: isMobile ? screenHeight * 0.85 : screenHeight * 0.9,
+              height: isMobile ? screenHeight * 0.9 : screenHeight * 1.0,
+              width: 1800,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -129,8 +62,8 @@ class LandingPage extends StatelessWidget {
                     top: -100,
                     right: -100,
                     child: Container(
-                      width: 300,
-                      height: 300,
+                      width: 400,
+                      height: 400,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.1),
@@ -141,8 +74,8 @@ class LandingPage extends StatelessWidget {
                     bottom: -150,
                     left: -150,
                     child: Container(
-                      width: 400,
-                      height: 400,
+                      width: 550,
+                      height: 550,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.1),
@@ -191,8 +124,24 @@ class LandingPage extends StatelessWidget {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductCatalogScreen(),
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: Offset(1.0, 0.0),
+                                      end: Offset.zero,
+                                    ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOut,
+                                    )),
+                                    child: FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                transitionDuration: Duration(milliseconds: 500),
                               ),
                             );
                           },
@@ -318,6 +267,7 @@ class LandingPage extends StatelessWidget {
               padding: EdgeInsets.symmetric(
                   vertical: isMobile ? 40 : 80,
                   horizontal: isMobile ? 20 : screenWidth * 0.1),
+              width: 1800,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -353,8 +303,24 @@ class LandingPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductCatalogScreen(),
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: Offset(1.0, 0.0),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOut,
+                              )),
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                            );
+                          },
+                          transitionDuration: Duration(milliseconds: 500),
                         ),
                       );
                     },
@@ -485,56 +451,6 @@ class LandingPage extends StatelessWidget {
                   SizedBox(height: isMobile ? 30 : 40),
                   Divider(color: Colors.white30),
                   SizedBox(height: 20),
-                  
-                  // Theme Toggle Section
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Column(
-                      children: [
-                        Text(
-                          'THEME SETTINGS',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildThemeButton(
-                              context,
-                              icon: Icons.brightness_auto,
-                              label: 'System',
-                              themeMode: ThemeMode.system,
-                              currentTheme: Theme.of(context).brightness,
-                            ),
-                            SizedBox(width: 8),
-                            _buildThemeButton(
-                              context,
-                              icon: Icons.light_mode,
-                              label: 'Light',
-                              themeMode: ThemeMode.light,
-                              currentTheme: Theme.of(context).brightness,
-                            ),
-                            SizedBox(width: 8),
-                            _buildThemeButton(
-                              context,
-                              icon: Icons.dark_mode,
-                              label: 'Dark',
-                              themeMode: ThemeMode.dark,
-                              currentTheme: Theme.of(context).brightness,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  Divider(color: Colors.white30),
-                  SizedBox(height: 20),
                   Text(
                     '© 2023 SHOEVAULT. All rights reserved.',
                     style: TextStyle(
@@ -591,60 +507,11 @@ class LandingPage extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: Colors.black54,
               fontSize: isMobile ? 14 : null,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildThemeButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required ThemeMode themeMode,
-    required Brightness currentTheme,
-  }) {
-    // Get current theme mode from MyApp
-    final myApp = MyApp.of(context);
-    final isSelected = (myApp != null && myApp._themeMode == themeMode);
-    
-    return InkWell(
-      onTap: () {
-        myApp?.setThemeMode(themeMode);
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.white : Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
-            SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -669,56 +536,17 @@ class Product {
   });
 }
 
-class ProductCatalogApp extends StatefulWidget {
+class ProductCatalogApp extends StatelessWidget {
   const ProductCatalogApp({super.key});
-
-  @override
-  State<ProductCatalogApp> createState() => _ProductCatalogAppState();
-  
-  static _ProductCatalogAppState? of(BuildContext context) =>
-      context.findAncestorStateOfType<_ProductCatalogAppState>();
-}
-
-class _ProductCatalogAppState extends State<ProductCatalogApp> {
-  ThemeMode _themeMode = ThemeMode.system;
-
-  void setThemeMode(ThemeMode themeMode) {
-    setState(() {
-      _themeMode = themeMode;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SHOEVAULT RESERVATION',
       theme: ThemeData(
-        colorScheme: ColorScheme.light(
-          primary: const Color(0xFF0730E8), // Main brand color
-          secondary: const Color(0xFF4D7CFF), // Secondary color
-          surface: const Color.fromARGB(255, 255, 255, 255), // Background color for cards, etc.
-          background: Colors.white, // Scaffold background
-          onPrimary: Colors.white, // Text/icon color on primary color
-          onSecondary: Colors.white, // Text/icon color on secondary color
-          onSurface: Colors.black87, // Default text color
-        ),
+        primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Inter',
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
-          secondary: const Color(0xFF6B8FFF), // Secondary color for dark mode
-          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
-          background: const Color(0xFF121212), // Scaffold background
-          onPrimary: Colors.white, // Text/icon color on primary color
-          onSecondary: Colors.white, // Text/icon color on secondary color
-          onSurface: Colors.white, // Default text color
-        ),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Inter',
-      ),
-      themeMode: _themeMode, // Use controlled theme mode
       home: ProductCatalogScreen(),
       debugShowCheckedModeBanner: false,
     );
@@ -987,8 +815,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       child: Text('Proceed to Reservation'),
                       onPressed: () async {
                         Navigator.pop(context);
-                        // Navigate to ReservationFormScreen
-                        await Navigator.push(
+                        // Await for result from ReservationFormScreen
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ReservationFormScreen(
@@ -997,6 +825,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                             ),
                           ),
                         );
+                        // Optionally handle result if needed
                       },
                     ),
                 ],
@@ -1021,39 +850,87 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Product Catalog'),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
-      floatingActionButton: FloatingActionButton.extended(
-        label: Text('Reserve (${reservedProducts.values.fold(0, (sum, sp) => sum + sp.quantity)})'),
-        icon: Icon(Icons.shopping_cart),
-        onPressed: () async {
-          if (reservedProducts.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Please select at least one product.')),
-            );
-            return;
-          }
-          
-          if (isDesktop) {
-            // Navigate to ReservationFormScreen
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ReservationFormScreen(
-                  selectedProducts: reservedProducts.values.toList(),
-                  onReservationSuccess: _deductStocksAfterReservation,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    // Set the background gradient for the whole catalog area
+    return Container(
+             decoration: BoxDecoration(
+         gradient: LinearGradient(
+           begin: Alignment.topLeft,
+           end: Alignment.bottomRight,
+           colors: [
+                    colorScheme.primary.withOpacity(0.1),
+                    colorScheme.secondary.withOpacity(0.1),
+                  ],
+         ),
+       ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'ShoeVault Catalog',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Open Sans',
+                    fontSize: 24,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-            );
-          } else {
-            _showReservationBottomSheet();
-          }
-        },
+              Image.asset(
+                'assets/pictures/shoevault_logo.png',
+                height: 40,
+                width: 50,
+              ),
+            ],
+          ),
+          centerTitle: false,
+          elevation: 0,
+          backgroundColor: colorScheme.primary.withOpacity(0.8),
+          iconTheme: IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
+        floatingActionButton: FloatingActionButton.extended(
+          label: Text('Reserve (${reservedProducts.values.fold(0, (sum, sp) => sum + sp.quantity)})'),
+          icon: Icon(Icons.shopping_cart),
+          onPressed: () async {
+            if (reservedProducts.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Please select at least one product.')),
+              );
+              return;
+            }
+            
+            if (isDesktop) {
+              // Await for result from ReservationFormScreen
+              final result = await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => ReservationFormScreen(
+                    selectedProducts: reservedProducts.values.toList(),
+                    onReservationSuccess: _deductStocksAfterReservation,
+                  ),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: Duration(milliseconds: 300),
+                ),
+              );
+              // Optionally handle result if needed
+            } else {
+              _showReservationBottomSheet();
+            }
+          },
+        ),
       ),
     );
   }
@@ -1081,15 +958,16 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     });
                   },
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 16),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: categories.map((cat) => Padding(
                       padding: const EdgeInsets.only(right: 4.0),
                       child: ChoiceChip(
-                        label: Text(cat),
+                        label: Text(cat, style: TextStyle(fontFamily: 'Open Sans')),
                         selected: selectedCategory == cat,
+                        selectedColor: const Color(0xFF0730E8),
                         onSelected: (selected) {
                           setState(() {
                             selectedCategory = cat;
@@ -1099,7 +977,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     )).toList(),
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 16),
                 Expanded(
                   child: Center(
                     child: LayoutBuilder(
@@ -1112,7 +990,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                             crossAxisCount: crossAxisCount,
                             childAspectRatio: 0.62,
                             crossAxisSpacing: 20,
-                            mainAxisSpacing: 20,
+                            mainAxisSpacing: 30,
                           ),
                           itemBuilder: (context, filteredIndex) {
                             final product = filteredProducts[filteredIndex];
@@ -1126,22 +1004,11 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                color: Colors.white, // Make card white
                                 child: Container(
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: Theme.of(context).brightness == Brightness.dark
-                                          ? [
-                                              Color(0xFF2A2A2A),
-                                              Color(0xFF1A1A1A),
-                                            ]
-                                          : [
-                                              Color(0xFFe3f0ff),
-                                              Color(0xFFb3d1ff),
-                                            ],
-                                    ),
+                                    color: Colors.white,
                                   ),
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
@@ -1171,35 +1038,40 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                               ),
                                             ),
                                             SizedBox(height: 6),
-                                            Text(
-                                              product.name,
-                                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                                                                          Text(
+                                                product.name,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                  color: Colors.black87,
+                                                  fontFamily: 'Open Sans',
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             SizedBox(height: 2),
-                                            Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
+                                            Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                             SizedBox(height: 2),
-                                            Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                            Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                            Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
+                                            Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
                                             Row(
                                               mainAxisAlignment: MainAxisAlignment.center,
                                               children: [
-                                                Text('Size:', style: TextStyle(fontSize: 12)),
+                                                Text('Size:', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                                 SizedBox(width: 2),
                                                 DropdownButton<String>(
                                                   value: currentSize,
                                                   items: product.sizes
                                                       .map((size) => DropdownMenuItem(
                                                             value: size,
-                                                            child: Text(size, style: TextStyle(fontSize: 12)),
+                                                            child: Text(size, style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                                           ))
                                                       .toList(),
                                                   onChanged: (val) {
                                                     // Size selection handled in the add/remove functions
                                                   },
-                                                  style: TextStyle(fontSize: 12, color: Colors.black),
+                                                  style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'Open Sans'),
                                                   underline: SizedBox(),
                                                 ),
                                               ],
@@ -1211,7 +1083,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                                 width: 40,
                                                 height: 40,
                                                 decoration: BoxDecoration(
-                                                  color: Colors.blue,
+                                                  color: const Color(0xFF0730E8),
                                                   shape: BoxShape.circle,
                                                 ),
                                                 child: IconButton(
@@ -1243,7 +1115,17 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         Container(
           width: 300,
           decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: Colors.grey[300]!))),
+            color: Colors.white,
+            border: Border(left: BorderSide(color: const Color.fromARGB(255, 211, 210, 210)!)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                spreadRadius: 2,
+                blurRadius: 12,
+                offset: Offset(-2, 4), // subtle shadow to the left and down
+              ),
+            ],
+          ),
           child: Column(
             children: [
               Padding(
@@ -1315,7 +1197,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               });
             },
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 16),
           Row(
             children: [
               Text('Category:', style: TextStyle(fontSize: 14)),
@@ -1336,7 +1218,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               ),
             ],
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 16),
           Expanded(
             child: Center(
               child: LayoutBuilder(
@@ -1349,7 +1231,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       crossAxisCount: crossAxisCount,
                       childAspectRatio: 0.62,
                       crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
+                      mainAxisSpacing: 30,
                     ),
                     itemBuilder: (context, filteredIndex) {
                       final product = filteredProducts[filteredIndex];
@@ -1366,19 +1248,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           child: Container(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: Theme.of(context).brightness == Brightness.dark
-                                    ? [
-                                        Color(0xFF2A2A2A),
-                                        Color(0xFF1A1A1A),
-                                      ]
-                                    : [
-                                        Color(0xFFe3f0ff),
-                                        Color(0xFFb3d1ff),
-                                      ],
-                              ),
+                              color: Colors.white,
                             ),
                             child: LayoutBuilder(
                               builder: (context, constraints) {
@@ -1410,33 +1280,33 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                       SizedBox(height: 6),
                                       Text(
                                         product.name,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'Open Sans'),
                                         textAlign: TextAlign.center,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       SizedBox(height: 2),
-                                      Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12)),
+                                      Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                       SizedBox(height: 2),
-                                      Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-                                      Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+                                      Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
+                                      Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Text('Size:', style: TextStyle(fontSize: 12)),
+                                          Text('Size:', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                           SizedBox(width: 2),
                                           DropdownButton<String>(
                                             value: currentSize,
                                             items: product.sizes
                                                 .map((size) => DropdownMenuItem(
                                                       value: size,
-                                                      child: Text(size, style: TextStyle(fontSize: 12)),
+                                                      child: Text(size, style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
                                                     ))
                                                 .toList(),
                                             onChanged: (val) {
                                               // Size selection handled in the add/remove functions
                                             },
-                                            style: TextStyle(fontSize: 12, color: Colors.black),
+                                            style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'Open Sans'),
                                             underline: SizedBox(),
                                           ),
                                         ],
@@ -1455,7 +1325,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                               width: buttonSize,
                                               height: buttonSize,
                                               decoration: BoxDecoration(
-                                                color: Colors.blue,
+                                                color: const Color(0xFF0730E8),
                                                 shape: BoxShape.circle,
                                               ),
                                               child: IconButton(
@@ -1871,7 +1741,7 @@ class ReceiptScreen extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Colors.blue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Column(
