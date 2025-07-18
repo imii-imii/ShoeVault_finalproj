@@ -4,23 +4,89 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+  
+  static _MyAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  String get currentThemeLabel {
+    return _themeMode == ThemeMode.light ? 'Light' : 'Dark';
+  }
+
+  IconData get currentThemeIcon {
+    return _themeMode == ThemeMode.light ? Icons.light_mode : Icons.dark_mode;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SHOEVAULT',
+      themeMode: _themeMode,
       theme: ThemeData(
+        brightness: Brightness.light,
         colorScheme: ColorScheme.light(
           primary: const Color(0xFF0730E8), // Main brand color
           secondary: const Color(0xFF4D7CFF), // Secondary color
-          surface: const Color.fromARGB(255, 255, 255, 255), // Background color for cards, etc.
+          surface: Colors.white, // Background color for cards, etc.
           background: Colors.white, // Scaffold background
           onPrimary: Colors.white, // Text/icon color on primary color
           onSecondary: Colors.white, // Text/icon color on secondary color
           onSurface: Colors.black87, // Default text color
         ),
+        scaffoldBackgroundColor: Colors.white,
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: 'Open Sans',
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF0730E8),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
+          secondary: const Color(0xFF7B9EFF), // Secondary color
+          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
+          background: const Color(0xFF121212), // Scaffold background
+          onPrimary: Colors.white, // Text/icon color on primary color
+          onSecondary: Colors.white, // Text/icon color on secondary color
+          onSurface: Colors.white, // Default text color
+        ),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Open Sans',
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1E1E1E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        cardTheme: CardThemeData(
+          color: const Color(0xFF1E1E1E),
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
       home: LandingPage(),
       debugShowCheckedModeBanner: false,
@@ -31,439 +97,481 @@ class MyApp extends StatelessWidget {
 class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isMobile = screenWidth < 600;
-    final isTablet = screenWidth >= 800 && screenWidth < 1200;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        bool isMobile = constraints.maxWidth < 600;
+        final screenHeight = MediaQuery.of(context).size.height;
+        final screenWidth = MediaQuery.of(context).size.width;
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Hero Section
-            Container(
-              height: isMobile ? screenHeight * 0.9 : screenHeight * 1.0,
-              width: 1800,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colorScheme.primary.withOpacity(0.8),
-                    colorScheme.secondary.withOpacity(0.6),
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: -100,
-                    right: -100,
-                    child: Container(
-                      width: 400,
-                      height: 400,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -150,
-                    left: -150,
-                    child: Container(
-                      width: 550,
-                      height: 550,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 20 : screenWidth * 0.1),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: isMobile ? 40 : screenHeight * 0.1),
-                        Text(
-                          'STEP INTO STYLE',
-                          style: TextStyle(
-                            fontSize: isMobile ? 12 : 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white.withOpacity(0.8),
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          isMobile
-                              ? 'Premium Sneakers Reservation'
-                              : 'Premium Sneakers\nReservation',
-                          style: TextStyle(
-                            fontSize: isMobile ? 28 : 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1.2,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        Text(
-                          'Reserve your favorite sneakers online and pick them up at our store. Limited stocks available.',
-                          style: TextStyle(
-                            fontSize: isMobile ? 14 : 16,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                        SizedBox(height: 40),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  return SlideTransition(
-                                    position: Tween<Offset>(
-                                      begin: Offset(1.0, 0.0),
-                                      end: Offset.zero,
-                                    ).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.easeInOut,
-                                    )),
-                                    child: FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                transitionDuration: Duration(milliseconds: 500),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white, // Button background
-                            foregroundColor: colorScheme.primary, // Text color
-                            padding: EdgeInsets.symmetric(
-                                horizontal: isMobile ? 30 : 40,
-                                vertical: isMobile ? 15 : 18),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            elevation: 5,
-                          ),
-                          child: Text(
-                            'Start a Reservation',
-                            style: TextStyle(
-                              fontSize: isMobile ? 14 : 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: isMobile ? 20 : 30),
+        return Scaffold(
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Hero Section
+                Container(
+                  height: isMobile ? screenHeight * 0.9 : screenHeight * 1.0,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colorScheme.primary.withOpacity(0.8),
+                        colorScheme.secondary.withOpacity(0.6),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            
-            // Features Section
-            Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: isMobile ? 40 : 80,
-                  horizontal: isMobile ? 20 : screenWidth * 0.1),
-              child: Column(
-                children: [
-                  Text(
-                    'WHY CHOOSE US',
-                    style: TextStyle(
-                      fontSize: isMobile ? 12 : 14,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    isMobile
-                        ? 'The Best Sneaker Shopping Experience'
-                        : 'The Best Sneaker\nShopping Experience',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: isMobile ? 24 : 32,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 30 : 50),
-                  isMobile || isTablet
-                      ? Column(
-                          children: [
-                            _buildFeature(
-                              icon: Icons.local_shipping,
-                              title: 'Fast Pickup',
-                              description:
-                                  'Reserve online and pick up in-store within hours',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                            _buildFeature(
-                              icon: Icons.verified_user,
-                              title: 'Authentic Products',
-                              description:
-                                  '100% genuine sneakers with verification',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                            _buildFeature(
-                              icon: Icons.star,
-                              title: 'Exclusive Drops',
-                              description: 'Access to limited edition releases',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                          ],
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildFeature(
-                              icon: Icons.local_shipping,
-                              title: 'Fast Pickup',
-                              description:
-                                  'Reserve online and pick up in-store within hours',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                            _buildFeature(
-                              icon: Icons.verified_user,
-                              title: 'Authentic Products',
-                              description:
-                                  '100% genuine sneakers with verification',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                            _buildFeature(
-                              icon: Icons.star,
-                              title: 'Exclusive Drops',
-                              description: 'Access to limited edition releases',
-                              colorScheme: colorScheme,
-                              isMobile: isMobile,
-                            ),
-                          ],
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: -100,
+                        right: -100,
+                        child: Container(
+                          width: 400,
+                          height: 400,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.1),
+                          ),
                         ),
-                ],
-              ),
-            ),
-            
-            // CTA Section
-            Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: isMobile ? 40 : 80,
-                  horizontal: isMobile ? 20 : screenWidth * 0.1),
-              width: 1800,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    colorScheme.primary.withOpacity(0.1),
-                    colorScheme.secondary.withOpacity(0.1),
-                  ],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'READY TO RESERVE?',
-                    style: TextStyle(
-                      fontSize: isMobile ? 12 : 14,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Browse Our Latest Collection',
-                    style: TextStyle(
-                      fontSize: isMobile ? 22 : 28,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: Offset(1.0, 0.0),
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOut,
-                              )),
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
+                      ),
+                      Positioned(
+                        bottom: -150,
+                        left: -150,
+                        child: Container(
+                          width: 550,
+                          height: 550,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 20 : screenWidth * 0.1),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: isMobile ? 40 : screenHeight * 0.1),
+                            Text(
+                              'STEP INTO STYLE',
+                              style: TextStyle(
+                                fontSize: isMobile ? 12 : 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white.withOpacity(0.8),
+                                letterSpacing: 2,
                               ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              isMobile
+                                  ? 'Premium Sneakers Reservation'
+                                  : 'Premium Sneakers\nReservation',
+                              style: TextStyle(
+                                fontSize: isMobile ? 28 : 36,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                height: 1.2,
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              'Reserve your favorite sneakers online and pick them up at our store. Limited stocks available.',
+                              style: TextStyle(
+                                fontSize: isMobile ? 14 : 16,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                            ),
+                            SizedBox(height: 40),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  PageRouteBuilder(
+                                    pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
+                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                      return SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: Offset(1.0, 0.0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeInOut,
+                                        )),
+                                        child: FadeTransition(
+                                          opacity: animation,
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    transitionDuration: Duration(milliseconds: 500),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white, // Button background
+                                foregroundColor: colorScheme.primary, // Text color
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: isMobile ? 30 : 40,
+                                    vertical: isMobile ? 15 : 18),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                elevation: 5,
+                              ),
+                              child: Text(
+                                'Start a Reservation',
+                                style: TextStyle(
+                                  fontSize: isMobile ? 14 : 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: isMobile ? 20 : 30),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Features Section
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: isMobile ? 40 : 80,
+                      horizontal: isMobile ? 20 : screenWidth * 0.1),
+                  child: Column(
+                    children: [
+                      Text(
+                        'WHY CHOOSE US',
+                        style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        isMobile
+                            ? 'The Best Sneaker Shopping Experience'
+                            : 'The Best Sneaker\nShopping Experience',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isMobile ? 24 : 32,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: isMobile ? 30 : 50),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          bool isNarrow = constraints.maxWidth < 800;
+                          if (isNarrow) {
+                            return Column(
+                              children: [
+                                _buildFeature(
+                                  icon: Icons.local_shipping,
+                                  title: 'Fast Pickup',
+                                  description: 'Reserve online and pick up in-store within hours',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                                _buildFeature(
+                                  icon: Icons.verified_user,
+                                  title: 'Authentic Products',
+                                  description: '100% genuine sneakers with verification',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                                _buildFeature(
+                                  icon: Icons.star,
+                                  title: 'Exclusive Drops',
+                                  description: 'Access to limited edition releases',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                              ],
                             );
-                          },
-                          transitionDuration: Duration(milliseconds: 500),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary, // Button background
-                      foregroundColor: colorScheme.onPrimary, // Text color
-                      padding: EdgeInsets.symmetric(
-                          horizontal: isMobile ? 30 : 40,
-                          vertical: isMobile ? 15 : 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                          } else {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildFeature(
+                                  icon: Icons.local_shipping,
+                                  title: 'Fast Pickup',
+                                  description: 'Reserve online and pick up in-store within hours',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                                _buildFeature(
+                                  icon: Icons.verified_user,
+                                  title: 'Authentic Products',
+                                  description: '100% genuine sneakers with verification',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                                _buildFeature(
+                                  icon: Icons.star,
+                                  title: 'Exclusive Drops',
+                                  description: 'Access to limited edition releases',
+                                  colorScheme: colorScheme,
+                                  isMobile: isMobile,
+                                ),
+                              ],
+                            );
+                          }
+                        },
                       ),
-                      elevation: 5,
-                    ),
-                    child: Text(
-                      'Explore Catalog',
-                      style: TextStyle(
-                        fontSize: isMobile ? 14 : 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    ],
+                  ),
+                ),
+                
+                // CTA Section
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: isMobile ? 40 : 80,
+                      horizontal: isMobile ? 20 : screenWidth * 0.1),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        colorScheme.primary.withOpacity(0.1),
+                        colorScheme.secondary.withOpacity(0.1),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            
-            // Footer
-            Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: isMobile ? 30 : 40,
-                  horizontal: isMobile ? 20 : screenWidth * 0.1),
-              color: Colors.black87,
-              child: Column(
-                children: [
-                  isMobile || isTablet
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'SHOEVAULT',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Premium sneaker reservation system for true enthusiasts',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                                SizedBox(height: 30),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'CONTACT',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Manghinao, Bauan, Batangas\nshoevervaultbats@gmail.com\n0917-123-4567',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'SHOEVAULT',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Premium sneaker reservation\nsystem for true enthusiasts',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'CONTACT',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 10),
-                                Text(
-                                  'Manghinao, Bauan, Batangas\nshoevervaultbats@gmail.com\n0917-123-4567',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                  child: Column(
+                    children: [
+                      Text(
+                        'READY TO RESERVE?',
+                        style: TextStyle(
+                          fontSize: isMobile ? 12 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                          letterSpacing: 2,
                         ),
-                  SizedBox(height: isMobile ? 30 : 40),
-                  Divider(color: Colors.white30),
-                  SizedBox(height: 20),
-                  Text(
-                    '© 2023 SHOEVAULT. All rights reserved.',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Browse Our Latest Collection',
+                        style: TextStyle(
+                          fontSize: isMobile ? 22 : 28,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => ProductCatalogScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: Offset(1.0, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeInOut,
+                                  )),
+                                  child: FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              transitionDuration: Duration(milliseconds: 500),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary, // Button background
+                          foregroundColor: colorScheme.onPrimary, // Text color
+                          padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 30 : 40,
+                              vertical: isMobile ? 15 : 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: Text(
+                          'Explore Catalog',
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                
+                // Footer
+                Container(
+                  padding: EdgeInsets.symmetric(
+                      vertical: isMobile ? 30 : 40,
+                      horizontal: isMobile ? 20 : screenWidth * 0.1),
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? colorScheme.surface.withOpacity(0.8)
+                      : Colors.grey[900],
+                  child: Column(
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          bool isNarrow = constraints.maxWidth < 800;
+                          if (isNarrow) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'SHOEVAULT',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).brightness == Brightness.dark 
+                                            ? colorScheme.onSurface 
+                                            : Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Premium sneaker reservation system for true enthusiasts',
+                                      style: TextStyle(
+                                        color: Theme.of(context).brightness == Brightness.dark 
+                                            ? colorScheme.onSurface.withOpacity(0.7)
+                                            : Colors.white70,
+                                      ),
+                                    ),
+                                    SizedBox(height: 30),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'CONTACT',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Manghinao, Bauan, Batangas\nshoevervaultbats@gmail.com\n0917-123-4567',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          } else {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'SHOEVAULT',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Premium sneaker reservation\nsystem for true enthusiasts',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'CONTACT',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Manghinao, Bauan, Batangas\nshoevervaultbats@gmail.com\n0917-123-4567',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                        },
+                      ),
+                      SizedBox(height: isMobile ? 30 : 40),
+                      Divider(color: Colors.white30),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '© 2023 SHOEVAULT. All rights reserved.',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                          // Theme toggle button
+                          TextButton.icon(
+                            onPressed: () {
+                              MyApp.of(context)?.toggleTheme();
+                            },
+                            icon: Icon(
+                              MyApp.of(context)?.currentThemeIcon ?? Icons.light_mode,
+                              color: Colors.white70,
+                              size: 16,
+                            ),
+                            label: Text(
+                              MyApp.of(context)?.currentThemeLabel ?? 'Light',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -517,7 +625,7 @@ class LandingPage extends StatelessWidget {
   }
 }
 
-// The rest of your existing code for ProductCatalogScreen and other classes goes here...
+// Product data model
 class Product {
   final String name;
   final double price;
@@ -562,104 +670,22 @@ class ProductCatalogScreen extends StatefulWidget {
 
 class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   final List<Product> products = [
-    Product(
-      name: 'Nike Air Max',
-      price: 5995.0,
-      sizes: ['7', '8', '9', '10'],
-      imageUrl: '',
-      category: 'Sneakers',
-      stock: 15,
-    ),
-    Product(
-      name: 'Adidas Ultraboost',
-      price: 7995.0,
-      sizes: ['6', '7', '8', '9'],
-      imageUrl: '',
-      category: 'Running',
-      stock: 8,
-    ),
-    Product(
-      name: 'Puma Suede',
-      price: 4595.0,
-      sizes: ['8', '9', '10', '11'],
-      imageUrl: '',
-      category: 'Casual',
-      stock: 12,
-    ),
-    Product(
-      name: 'Converse Chuck Taylor',
-      price: 3495.0,
-      sizes: ['6', '7', '8', '9', '10'],
-      imageUrl: '',
-      category: 'Casual',
-      stock: 20,
-    ),
-    Product(
-      name: 'New Balance 574',
-      price: 5295.0,
-      sizes: ['7', '8', '9', '10', '11'],
-      imageUrl: '',
-      category: 'Running',
-      stock: 5,
-    ),
-    Product(
-      name: 'Reebok Classic',
-      price: 4795.0,
-      sizes: ['7', '8', '9', '10'],
-      imageUrl: '',
-      category: 'Casual',
-      stock: 7,
-    ),
-    Product(
-      name: 'ASICS Gel-Lyte',
-      price: 5295.0,
-      sizes: ['8', '9', '10', '11'],
-      imageUrl: '',
-      category: 'Running',
-      stock: 9,
-    ),
-    Product(
-      name: 'Fila Disruptor',
-      price: 3995.0,
-      sizes: ['6', '7', '8', '9'],
-      imageUrl: '',
-      category: 'Sneakers',
-      stock: 14,
-    ),
-    Product(
-      name: 'Under Armour HOVR',
-      price: 6595.0,
-      sizes: ['7', '8', '9', '10'],
-      imageUrl: '',
-      category: 'Running',
-      stock: 6,
-    ),
-    Product(
-      name: 'Saucony Jazz',
-      price: 4995.0,
-      sizes: ['8', '9', '10', '11'],
-      imageUrl: '',
-      category: 'Running',
-      stock: 11,
-    ),
-    Product(
-      name: 'Jordan 1 Mid',
-      price: 7495.0,
-      sizes: ['7', '8', '9', '10', '11'],
-      imageUrl: '',
-      category: 'Sneakers',
-      stock: 3,
-    ),
+    Product(name: 'Nike Air Max', price: 5995.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Sneakers', stock: 15),
+    Product(name: 'Adidas Ultraboost', price: 7995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Running', stock: 8),
+    Product(name: 'Puma Suede', price: 4595.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Casual', stock: 12),
+    Product(name: 'Converse Chuck Taylor', price: 3495.0, sizes: ['6', '7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 20),
+    Product(name: 'New Balance 574', price: 5295.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 5),
+    Product(name: 'Reebok Classic', price: 4795.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 7),
+    Product(name: 'ASICS Gel-Lyte', price: 5295.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 9),
+    Product(name: 'Fila Disruptor', price: 3995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Sneakers', stock: 14),
+    Product(name: 'Under Armour HOVR', price: 6595.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Running', stock: 6),
+    Product(name: 'Saucony Jazz', price: 4995.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 11),
+    Product(name: 'Jordan 1 Mid', price: 7495.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Sneakers', stock: 3),
   ];
 
   final Map<String, SelectedProduct> reservedProducts = {};
   String searchQuery = '';
   String selectedCategory = 'All';
-
-  bool get isDesktop {
-    final mediaQuery = MediaQuery.of(context);
-    return mediaQuery.size.width >= 1000;
-  }
 
   List<String> get categories {
     final cats = products.map((p) => p.category).toSet().toList();
@@ -673,28 +699,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       final matchesSearch = product.name.toLowerCase().contains(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
-  }
-
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < 700) {
-      return 2;
-    } else if (width < 1200) {
-      return 3;
-    } else {
-      return 4;
-    }
-  }
-
-  double _getCardHeight(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width < 700) {
-      return 450;
-    } else if (width < 1200) {
-      return 480;
-    } else {
-      return 500;
-    }
   }
 
   void _addToReservation(int index, String size) {
@@ -741,9 +745,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           );
         } else {
           reservedProducts.remove(key);
-          if (!isDesktop && reservedProducts.isEmpty) {
-            Navigator.pop(context);
-          }
         }
       }
     });
@@ -810,24 +811,30 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         },
                       ),
                     ),
-                  if (reservedProducts.isNotEmpty && !isDesktop)
-                    ElevatedButton(
-                      child: Text('Proceed to Reservation'),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        // Await for result from ReservationFormScreen
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ReservationFormScreen(
-                              selectedProducts: reservedProducts.values.toList(),
-                              onReservationSuccess: _deductStocksAfterReservation,
-                            ),
-                          ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      bool isMobile = constraints.maxWidth < 600;
+                      if (reservedProducts.isNotEmpty && isMobile) {
+                        return ElevatedButton(
+                          child: Text('Proceed to Reservation'),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            // Navigate to ReservationFormScreen
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReservationFormScreen(
+                                  selectedProducts: reservedProducts.values.toList(),
+                                  onReservationSuccess: _deductStocksAfterReservation,
+                                ),
+                              ),
+                            );
+                          },
                         );
-                        // Optionally handle result if needed
-                      },
-                    ),
+                      }
+                      return Container();
+                    },
+                  ),
                 ],
               ),
             );
@@ -852,21 +859,10 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // Set the background gradient for the whole catalog area
-    return Container(
-             decoration: BoxDecoration(
-         gradient: LinearGradient(
-           begin: Alignment.topLeft,
-           end: Alignment.bottomRight,
-           colors: [
-                    colorScheme.primary.withOpacity(0.1),
-                    colorScheme.secondary.withOpacity(0.1),
-                  ],
-         ),
-       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
+    
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      appBar: AppBar(
           title: Row(
             children: [
               Expanded(
@@ -879,6 +875,17 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+              ),
+              // Theme toggle button
+              IconButton(
+                icon: Icon(
+                  MyApp.of(context)?.currentThemeIcon ?? Icons.light_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  MyApp.of(context)?.toggleTheme();
+                },
+                tooltip: 'Toggle ${MyApp.of(context)?.currentThemeLabel == 'Light' ? 'Dark' : 'Light'} Mode',
               ),
               Image.asset(
                 'assets/pictures/shoevault_logo.png',
@@ -898,7 +905,17 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
             },
           ),
         ),
-        body: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            bool isDesktop = constraints.maxWidth >= 1000;
+            
+            if (isDesktop) {
+              return _buildDesktopLayout();
+            } else {
+              return _buildMobileLayout();
+            }
+          },
+        ),
         floatingActionButton: FloatingActionButton.extended(
           label: Text('Reserve (${reservedProducts.values.fold(0, (sum, sp) => sum + sp.quantity)})'),
           icon: Icon(Icons.shopping_cart),
@@ -910,9 +927,10 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               return;
             }
             
-            if (isDesktop) {
-              // Await for result from ReservationFormScreen
-              final result = await Navigator.push(
+            // Determine if we should show desktop or mobile flow
+            if (MediaQuery.of(context).size.width >= 1000) {
+              // Navigate to ReservationFormScreen for desktop
+              Navigator.push(
                 context,
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) => ReservationFormScreen(
@@ -925,17 +943,18 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   transitionDuration: Duration(milliseconds: 300),
                 ),
               );
-              // Optionally handle result if needed
             } else {
               _showReservationBottomSheet();
             }
           },
         ),
-      ),
     );
   }
 
   Widget _buildDesktopLayout() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -948,10 +967,14 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Search shoes...',
-                    prefixIcon: Icon(Icons.search),
+                    prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.6)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                    filled: true,
+                    fillColor: colorScheme.surface,
+                    hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
                   ),
+                  style: TextStyle(color: colorScheme.onSurface),
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value;
@@ -965,9 +988,13 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     children: categories.map((cat) => Padding(
                       padding: const EdgeInsets.only(right: 4.0),
                       child: ChoiceChip(
-                        label: Text(cat, style: TextStyle(fontFamily: 'Open Sans')),
+                        label: Text(cat, style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          color: selectedCategory == cat ? Colors.white : colorScheme.onSurface,
+                        )),
                         selected: selectedCategory == cat,
-                        selectedColor: const Color(0xFF0730E8),
+                        selectedColor: colorScheme.primary,
+                        backgroundColor: colorScheme.surface,
                         onSelected: (selected) {
                           setState(() {
                             selectedCategory = cat;
@@ -979,133 +1006,25 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 ),
                 SizedBox(height: 16),
                 Expanded(
-                  child: Center(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final crossAxisCount = _getCrossAxisCount(context);
-                        final cardHeight = _getCardHeight(context);
-                        return GridView.builder(
-                          itemCount: filteredProducts.length,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            childAspectRatio: 0.62,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 30,
-                          ),
-                          itemBuilder: (context, filteredIndex) {
-                            final product = filteredProducts[filteredIndex];
-                            final index = products.indexOf(product);
-                            final currentSize = product.sizes.first;
-                            
-                            return Center(
-                              child: Card(
-                                margin: EdgeInsets.zero,
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                color: Colors.white, // Make card white
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    color: Colors.white,
-                                  ),
-                                  child: LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final containerWidth = constraints.maxWidth;
-                                      final imageHeight = containerWidth * 0.6;
-                                      final imageMargin = containerWidth * 0.08;
-                                      return SizedBox(
-                                        width: containerWidth,
-                                        height: cardHeight,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            SizedBox(height: imageMargin),
-                                            Container(
-                                              height: imageHeight,
-                                              width: containerWidth - imageMargin * 2,
-                                              margin: EdgeInsets.symmetric(horizontal: imageMargin),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[300],
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              child: Center(
-                                                child: FittedBox(
-                                                  fit: BoxFit.contain,
-                                                  child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 6),
-                                                                                          Text(
-                                                product.name,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 13,
-                                                  color: Colors.black87,
-                                                  fontFamily: 'Open Sans',
-                                                ),
-                                                textAlign: TextAlign.center,
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            SizedBox(height: 2),
-                                            Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                            SizedBox(height: 2),
-                                            Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
-                                            Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Text('Size:', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                                SizedBox(width: 2),
-                                                DropdownButton<String>(
-                                                  value: currentSize,
-                                                  items: product.sizes
-                                                      .map((size) => DropdownMenuItem(
-                                                            value: size,
-                                                            child: Text(size, style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                                          ))
-                                                      .toList(),
-                                                  onChanged: (val) {
-                                                    // Size selection handled in the add/remove functions
-                                                  },
-                                                  style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'Open Sans'),
-                                                  underline: SizedBox(),
-                                                ),
-                                              ],
-                                            ),
-                                            Spacer(),
-                                            Padding(
-                                              padding: const EdgeInsets.only(bottom: 8.0),
-                                              child: Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF0730E8),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: IconButton(
-                                                  icon: Icon(Icons.add, color: Colors.white),
-                                                  onPressed: () {
-                                                    _addToReservation(index, currentSize);
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      bool isMobile = constraints.maxWidth < 600;
+                      return GridView.builder(
+                        itemCount: filteredProducts.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isMobile ? 2 : 4,
+                          childAspectRatio: 0.62,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 30,
+                        ),
+                        itemBuilder: (context, filteredIndex) {
+                          final product = filteredProducts[filteredIndex];
+                          final index = products.indexOf(product);
+                          
+                          return _buildProductCard(product, index);
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1115,14 +1034,14 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         Container(
           width: 300,
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border(left: BorderSide(color: const Color.fromARGB(255, 211, 210, 210)!)),
+            color: colorScheme.surface,
+            border: Border(left: BorderSide(color: colorScheme.onSurface.withOpacity(0.2))),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
                 spreadRadius: 2,
                 blurRadius: 12,
-                offset: Offset(-2, 4), // subtle shadow to the left and down
+                offset: Offset(-2, 4),
               ),
             ],
           ),
@@ -1130,13 +1049,19 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('Your Reservation', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text('Your Reservation', 
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    )),
               ),
-              Divider(),
+              Divider(color: colorScheme.onSurface.withOpacity(0.2)),
               if (reservedProducts.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text('No items selected', style: TextStyle(color: Colors.grey)),
+                  child: Text('No items selected', 
+                      style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
                 )
               else
                 Expanded(
@@ -1146,21 +1071,22 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       final key = reservedProducts.keys.elementAt(index);
                       final sp = reservedProducts[key]!;
                       return ListTile(
-                        title: Text(sp.product.name),
-                        subtitle: Text('Size: ${sp.size} | ₱${sp.product.price.toStringAsFixed(2)}'),
+                        title: Text(sp.product.name, style: TextStyle(color: colorScheme.onSurface)),
+                        subtitle: Text('Size: ${sp.size} | ₱${sp.product.price.toStringAsFixed(2)}',
+                            style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7))),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.remove, size: 20),
+                              icon: Icon(Icons.remove, size: 20, color: colorScheme.onSurface),
                               onPressed: () => _removeFromReservation(
                                 products.indexOf(sp.product), 
                                 sp.size
                               ),
                             ),
-                            Text(sp.quantity.toString()),
+                            Text(sp.quantity.toString(), style: TextStyle(color: colorScheme.onSurface)),
                             IconButton(
-                              icon: Icon(Icons.add, size: 20),
+                              icon: Icon(Icons.add, size: 20, color: colorScheme.onSurface),
                               onPressed: () => _addToReservation(
                                 products.indexOf(sp.product), 
                                 sp.size
@@ -1180,6 +1106,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   }
 
   Widget _buildMobileLayout() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Column(
@@ -1187,10 +1116,14 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           TextField(
             decoration: InputDecoration(
               hintText: 'Search shoes...',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.6)),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+              filled: true,
+              fillColor: colorScheme.surface,
+              hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
             ),
+            style: TextStyle(color: colorScheme.onSurface),
             onChanged: (value) {
               setState(() {
                 searchQuery = value;
@@ -1200,14 +1133,14 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           SizedBox(height: 16),
           Row(
             children: [
-              Text('Category:', style: TextStyle(fontSize: 14)),
+              Text('Category:', style: TextStyle(fontSize: 14, color: colorScheme.onSurface)),
               SizedBox(width: 8),
               DropdownButton<String>(
                 value: selectedCategory,
                 items: categories
                     .map((cat) => DropdownMenuItem(
                           value: cat,
-                          child: Text(cat),
+                          child: Text(cat, style: TextStyle(color: colorScheme.onSurface)),
                         ))
                     .toList(),
                 onChanged: (val) {
@@ -1215,147 +1148,161 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     selectedCategory = val!;
                   });
                 },
+                dropdownColor: colorScheme.surface,
+                style: TextStyle(color: colorScheme.onSurface),
               ),
             ],
           ),
           SizedBox(height: 16),
           Expanded(
-            child: Center(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final crossAxisCount = _getCrossAxisCount(context);
-                  final cardHeight = _getCardHeight(context);
-                  return GridView.builder(
-                    itemCount: filteredProducts.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: 0.62,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 30,
-                    ),
-                    itemBuilder: (context, filteredIndex) {
-                      final product = filteredProducts[filteredIndex];
-                      final index = products.indexOf(product);
-                      final currentSize = product.sizes.first;
-                      
-                      return Center(
-                        child: Card(
-                          margin: EdgeInsets.zero,
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: Colors.white,
-                            ),
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final containerWidth = constraints.maxWidth;
-                                final imageHeight = containerWidth * 0.6;
-                                final imageMargin = containerWidth * 0.08;
-                                return SizedBox(
-                                  width: containerWidth,
-                                  height: cardHeight,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      SizedBox(height: imageMargin),
-                                      Container(
-                                        height: imageHeight,
-                                        width: containerWidth - imageMargin * 2,
-                                        margin: EdgeInsets.symmetric(horizontal: imageMargin),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Center(
-                                          child: FittedBox(
-                                            fit: BoxFit.contain,
-                                            child: Icon(Icons.image, size: imageHeight * 0.7, color: Colors.grey[600]),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 6),
-                                      Text(
-                                        product.name,
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'Open Sans'),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text('Price: ₱${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                      SizedBox(height: 2),
-                                      Text('Stock: ${product.stock}', style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
-                                      Text(product.category, style: TextStyle(fontSize: 11, color: Colors.grey[600], fontFamily: 'Open Sans')),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text('Size:', style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                          SizedBox(width: 2),
-                                          DropdownButton<String>(
-                                            value: currentSize,
-                                            items: product.sizes
-                                                .map((size) => DropdownMenuItem(
-                                                      value: size,
-                                                      child: Text(size, style: TextStyle(fontSize: 12, fontFamily: 'Open Sans')),
-                                                    ))
-                                                .toList(),
-                                            onChanged: (val) {
-                                              // Size selection handled in the add/remove functions
-                                            },
-                                            style: TextStyle(fontSize: 12, color: Colors.black, fontFamily: 'Open Sans'),
-                                            underline: SizedBox(),
-                                          ),
-                                        ],
-                                      ),
-                                      Spacer(),
-                                      Padding(
-                                          padding: EdgeInsets.only(bottom: 6.0),
-                                          child: LayoutBuilder(
-                                          builder: (context, constraints) {
-                                          // Calculate responsive size based on screen width
-                                          final screenWidth = MediaQuery.of(context).size.width;
-                                          final buttonSize = screenWidth < 700 ? 20.0 : 40.0; // Smaller on very small devices
-                                          final iconSize = screenWidth < 700 ? 10.0 : 20.0; // Smaller icon on small devices
-
-                                            return Container(
-                                              width: buttonSize,
-                                              height: buttonSize,
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF0730E8),
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: IconButton(
-                                                icon: Icon(Icons.add, 
-                                                color: Colors.white, 
-                                                size: iconSize),
-                                                padding: EdgeInsets.zero, // Remove default padding
-                                                onPressed: () {
-                                                  _addToReservation(index, currentSize);
-                                                },
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                bool isMobile = constraints.maxWidth < 600;
+                return GridView.builder(
+                  itemCount: filteredProducts.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: isMobile ? 2 : 4,
+                    childAspectRatio: 0.62,
+                    crossAxisSpacing: isMobile ? 12 : 20,
+                    mainAxisSpacing: isMobile ? 16 : 30,
+                  ),
+                  itemBuilder: (context, filteredIndex) {
+                    final product = filteredProducts[filteredIndex];
+                    final index = products.indexOf(product);
+                    
+                    return _buildProductCard(product, index);
+                  },
+                );
+              },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(Product product, int index) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: colorScheme.surface,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: colorScheme.surface,
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final containerWidth = constraints.maxWidth;
+            final imageHeight = containerWidth * 0.6;
+            final imageMargin = containerWidth * 0.08;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image placeholder
+                Container(
+                  height: imageHeight,
+                  margin: EdgeInsets.all(imageMargin),
+                  decoration: BoxDecoration(
+                    color: colorScheme.brightness == Brightness.dark 
+                        ? Colors.grey[800] 
+                        : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.image,
+                      size: imageHeight * 0.4,
+                      color: colorScheme.brightness == Brightness.dark 
+                          ? Colors.grey[600] 
+                          : Colors.grey[400],
+                    ),
+                  ),
+                ),
+                
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: imageMargin),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: TextStyle(
+                            fontSize: containerWidth * 0.08,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          '₱${product.price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: containerWidth * 0.07,
+                            color: Colors.green[600],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Stock: ${product.stock}',
+                          style: TextStyle(
+                            fontSize: containerWidth * 0.06,
+                            color: product.stock > 5 ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        
+                        // Size selection
+                        Text(
+                          'Sizes:',
+                          style: TextStyle(
+                            fontSize: containerWidth * 0.06,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Wrap(
+                          spacing: 4,
+                          children: product.sizes.map((size) {
+                            return GestureDetector(
+                              onTap: product.stock > 0 ? () => _addToReservation(index, size) : null,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: product.stock > 0 ? colorScheme.primary : Colors.grey),
+                                  borderRadius: BorderRadius.circular(4),
+                                  color: product.stock > 0 ? colorScheme.primary.withOpacity(0.1) : Colors.grey[100],
+                                ),
+                                child: Text(
+                                  size,
+                                  style: TextStyle(
+                                    fontSize: containerWidth * 0.05,
+                                    color: product.stock > 0 ? colorScheme.primary : Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -1603,6 +1550,8 @@ class ReceiptScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double total = selectedProducts.fold(0, (sum, sp) => sum + (sp.product.price * sp.quantity));
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -1616,14 +1565,14 @@ class ReceiptScreen extends StatelessWidget {
             margin: EdgeInsets.symmetric(vertical: 20),
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
+              color: colorScheme.surface,
+              border: Border.all(color: colorScheme.primary, width: 2),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 2,
-                  blurRadius: 5,
+                  color: Colors.black.withOpacity(0.1),
                   offset: Offset(0, 3),
+                  blurRadius: 6,
                 ),
               ],
             ),
@@ -1634,155 +1583,137 @@ class ReceiptScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.shopping_bag, size: 30, color: Colors.blue),
+                    Image.asset(
+                      'assets/pictures/shoevault_logo.png',
+                      height: 40,
+                      width: 50,
+                    ),
                     SizedBox(width: 10),
                     Text('SHOEVAULT', 
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                          fontSize: 20, 
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        )),
                   ],
                 ),
                 SizedBox(height: 10),
                 Text('PICKUP RESERVATION RECEIPT', 
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Divider(thickness: 2, color: Colors.blue),
+                    style: TextStyle(
+                      fontSize: 16, 
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    )),
+                Divider(thickness: 2, color: colorScheme.primary),
                 SizedBox(height: 10),
                 
                 // Store Info
-                Text('Manghinao, Bauan, Batangas', style: TextStyle(fontSize: 12)),
-                Text('Contact: 0917-123-4567', style: TextStyle(fontSize: 12)),
-                Text('Email: shoevaultbats@gmail.com', style: TextStyle(fontSize: 12)),
+                Text('Manghinao, Bauan, Batangas', 
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface)),
+                Text('Contact: 0917-123-4567', 
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface)),
+                Text('Email: shoevaultbats@gmail.com', 
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurface)),
                 SizedBox(height: 10),
-                Divider(thickness: 1),
+                Divider(thickness: 1, color: colorScheme.onSurface.withOpacity(0.3)),
                 
                 // Customer Info
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('CUSTOMER DETAILS:', 
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('Customer Information:', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
                 ),
                 SizedBox(height: 8),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.person, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Name:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    Text(name, style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 4),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.email, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text(email),
+                    Text('Phone:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    Text(phone, style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 4),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.phone, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text(phone),
+                    Text('Email:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    Flexible(child: Text(email, overflow: TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurface))),
                   ],
                 ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text('${date.toLocal()}'.split(' ')[0]),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 16, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text(time.format(context)),
-                  ],
-                ),
-                
-                Divider(thickness: 1),
                 SizedBox(height: 10),
+                Divider(thickness: 1, color: colorScheme.onSurface.withOpacity(0.3)),
+                
+                // Pickup Info
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Pickup Details:', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Date:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    Text('${date.toLocal()}'.split(' ')[0], style: TextStyle(color: colorScheme.onSurface)),
+                  ],
+                ),
+                SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Time:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                    Text(time.format(context), style: TextStyle(color: colorScheme.onSurface)),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Divider(thickness: 1, color: colorScheme.onSurface.withOpacity(0.3)),
                 
                 // Items
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('RESERVED ITEMS:', 
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('Reserved Items:', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
                 ),
                 SizedBox(height: 8),
                 ...selectedProducts.map((sp) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  padding: EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Flexible(
-                        child: Text('${sp.product.name} (Size: ${sp.size}) x${sp.quantity}'),
+                      Expanded(
+                        child: Text('${sp.product.name} (${sp.size}) x${sp.quantity}', 
+                            style: TextStyle(fontSize: 12, color: colorScheme.onSurface)),
                       ),
-                      Text('₱${(sp.product.price * sp.quantity).toStringAsFixed(2)}'),
+                      Text('₱${(sp.product.price * sp.quantity).toStringAsFixed(2)}', 
+                          style: TextStyle(fontSize: 12, color: colorScheme.onSurface)),
                     ],
                   ),
                 )),
-                
-                Divider(thickness: 1),
-                SizedBox(height: 10),
-                
-                // Total
+                Divider(thickness: 1, color: colorScheme.onSurface.withOpacity(0.3)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('TOTAL:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colorScheme.onSurface)),
                     Text('₱${total.toStringAsFixed(2)}', 
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: colorScheme.onSurface)),
                   ],
                 ),
-                
                 SizedBox(height: 20),
-                // Footer notes
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Column(
-                    children: [
-                      Text('Thank you for your reservation!', 
-                          style: TextStyle(fontStyle: FontStyle.italic)),
-                      SizedBox(height: 5),
-                      Text('Please bring this ticket when picking up your items.',
-                          style: TextStyle(fontSize: 12)),
-                      Text('Valid ID and proof of payment required.',
-                          style: TextStyle(fontSize: 12)),
-                      SizedBox(height: 5),
-                      Text('Reservation ID: ${DateTime.now().millisecondsSinceEpoch}',
-                          style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    ],
-                  ),
-                ),
-                
-                SizedBox(height: 20),
-                // Action buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.share),
-                      label: Text('Share'),
-                      onPressed: () {
-                        // Share functionality would go here
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Sharing receipt...')),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                Text('Please present this receipt when picking up your items.',
+                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: colorScheme.onSurface.withOpacity(0.7))),
                 SizedBox(height: 10),
-                TextButton(
-                  child: Text('Back to Catalog'),
+                ElevatedButton(
                   onPressed: () {
                     Navigator.popUntil(context, (route) => route.isFirst);
                   },
+                  child: Text('Back to Home'),
                 ),
               ],
             ),
