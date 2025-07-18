@@ -4,7 +4,61 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
+  
+  static _MyAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_MyAppState>();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void toggleTheme() {
+    setState(() {
+      switch (_themeMode) {
+        case ThemeMode.system:
+          _themeMode = ThemeMode.light;
+          break;
+        case ThemeMode.light:
+          _themeMode = ThemeMode.dark;
+          break;
+        case ThemeMode.dark:
+          _themeMode = ThemeMode.system;
+          break;
+      }
+    });
+  }
+
+  String get currentThemeLabel {
+    switch (_themeMode) {
+      case ThemeMode.system:
+        return 'System';
+      case ThemeMode.light:
+        return 'Light';
+      case ThemeMode.dark:
+        return 'Dark';
+    }
+  }
+
+  IconData get currentThemeIcon {
+    switch (_themeMode) {
+      case ThemeMode.system:
+        return Icons.brightness_auto;
+      case ThemeMode.light:
+        return Icons.light_mode;
+      case ThemeMode.dark:
+        return Icons.dark_mode;
+    }
+  }
+
+  void setThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -22,6 +76,20 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         fontFamily: 'Inter',
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
+          secondary: const Color(0xFF6B8FFF), // Secondary color for dark mode
+          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
+          background: const Color(0xFF121212), // Scaffold background
+          onPrimary: Colors.white, // Text/icon color on primary color
+          onSecondary: Colors.white, // Text/icon color on secondary color
+          onSurface: Colors.white, // Default text color
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Inter',
+      ),
+      themeMode: _themeMode, // Use controlled theme mode
       home: LandingPage(),
       debugShowCheckedModeBanner: false,
     );
@@ -417,6 +485,56 @@ class LandingPage extends StatelessWidget {
                   SizedBox(height: isMobile ? 30 : 40),
                   Divider(color: Colors.white30),
                   SizedBox(height: 20),
+                  
+                  // Theme Toggle Section
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        Text(
+                          'THEME SETTINGS',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildThemeButton(
+                              context,
+                              icon: Icons.brightness_auto,
+                              label: 'System',
+                              themeMode: ThemeMode.system,
+                              currentTheme: Theme.of(context).brightness,
+                            ),
+                            SizedBox(width: 8),
+                            _buildThemeButton(
+                              context,
+                              icon: Icons.light_mode,
+                              label: 'Light',
+                              themeMode: ThemeMode.light,
+                              currentTheme: Theme.of(context).brightness,
+                            ),
+                            SizedBox(width: 8),
+                            _buildThemeButton(
+                              context,
+                              icon: Icons.dark_mode,
+                              label: 'Dark',
+                              themeMode: ThemeMode.dark,
+                              currentTheme: Theme.of(context).brightness,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  Divider(color: Colors.white30),
+                  SizedBox(height: 20),
                   Text(
                     '© 2023 SHOEVAULT. All rights reserved.',
                     style: TextStyle(
@@ -473,11 +591,60 @@ class LandingPage extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.black54,
+              color: colorScheme.onSurface.withOpacity(0.7),
               fontSize: isMobile ? 14 : null,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemeButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required ThemeMode themeMode,
+    required Brightness currentTheme,
+  }) {
+    // Get current theme mode from MyApp
+    final myApp = MyApp.of(context);
+    final isSelected = (myApp != null && myApp._themeMode == themeMode);
+    
+    return InkWell(
+      onTap: () {
+        myApp?.setThemeMode(themeMode);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -502,17 +669,56 @@ class Product {
   });
 }
 
-class ProductCatalogApp extends StatelessWidget {
+class ProductCatalogApp extends StatefulWidget {
   const ProductCatalogApp({super.key});
+
+  @override
+  State<ProductCatalogApp> createState() => _ProductCatalogAppState();
+  
+  static _ProductCatalogAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_ProductCatalogAppState>();
+}
+
+class _ProductCatalogAppState extends State<ProductCatalogApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void setThemeMode(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SHOEVAULT RESERVATION',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.light(
+          primary: const Color(0xFF0730E8), // Main brand color
+          secondary: const Color(0xFF4D7CFF), // Secondary color
+          surface: const Color.fromARGB(255, 255, 255, 255), // Background color for cards, etc.
+          background: Colors.white, // Scaffold background
+          onPrimary: Colors.white, // Text/icon color on primary color
+          onSecondary: Colors.white, // Text/icon color on secondary color
+          onSurface: Colors.black87, // Default text color
+        ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Inter',
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
+          secondary: const Color(0xFF6B8FFF), // Secondary color for dark mode
+          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
+          background: const Color(0xFF121212), // Scaffold background
+          onPrimary: Colors.white, // Text/icon color on primary color
+          onSecondary: Colors.white, // Text/icon color on secondary color
+          onSurface: Colors.white, // Default text color
+        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Inter',
+      ),
+      themeMode: _themeMode, // Use controlled theme mode
       home: ProductCatalogScreen(),
       debugShowCheckedModeBanner: false,
     );
@@ -781,8 +987,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       child: Text('Proceed to Reservation'),
                       onPressed: () async {
                         Navigator.pop(context);
-                        // Await for result from ReservationFormScreen
-                        final result = await Navigator.push(
+                        // Navigate to ReservationFormScreen
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ReservationFormScreen(
@@ -791,7 +997,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                             ),
                           ),
                         );
-                        // Optionally handle result if needed
                       },
                     ),
                 ],
@@ -835,8 +1040,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           }
           
           if (isDesktop) {
-            // Await for result from ReservationFormScreen
-            final result = await Navigator.push(
+            // Navigate to ReservationFormScreen
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ReservationFormScreen(
@@ -845,7 +1050,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 ),
               ),
             );
-            // Optionally handle result if needed
           } else {
             _showReservationBottomSheet();
           }
@@ -928,10 +1132,15 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                     gradient: LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
-                                      colors: [
-                                        Color(0xFFe3f0ff),
-                                        Color(0xFFb3d1ff),
-                                      ],
+                                      colors: Theme.of(context).brightness == Brightness.dark
+                                          ? [
+                                              Color(0xFF2A2A2A),
+                                              Color(0xFF1A1A1A),
+                                            ]
+                                          : [
+                                              Color(0xFFe3f0ff),
+                                              Color(0xFFb3d1ff),
+                                            ],
                                     ),
                                   ),
                                   child: LayoutBuilder(
@@ -1160,10 +1369,15 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFe3f0ff),
-                                  Color(0xFFb3d1ff),
-                                ],
+                                colors: Theme.of(context).brightness == Brightness.dark
+                                    ? [
+                                        Color(0xFF2A2A2A),
+                                        Color(0xFF1A1A1A),
+                                      ]
+                                    : [
+                                        Color(0xFFe3f0ff),
+                                        Color(0xFFb3d1ff),
+                                      ],
                               ),
                             ),
                             child: LayoutBuilder(

@@ -128,7 +128,6 @@ class _LoginFormState extends State<LoginForm> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -219,21 +218,6 @@ class _LoginFormState extends State<LoginForm> {
               }
               return null;
             },
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Checkbox(
-                value: _rememberMe,
-                activeColor: Colors.blue,
-                onChanged: (value) {
-                  setState(() {
-                    _rememberMe = value!;
-                  });
-                },
-              ),
-              const Text('Remember Me'),
-            ],
           ),
           const SizedBox(height: 24),
           SizedBox(
