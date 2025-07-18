@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'adminpage.dart';
+import 'adminpage.dart' as admin;
 
 void main() {
   runApp(const MyApp());
@@ -142,7 +142,7 @@ class _LoginFormState extends State<LoginForm> {
           _passwordController.text == '1234') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => OwnerPage()),
+          MaterialPageRoute(builder: (context) => admin.MyApp()),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

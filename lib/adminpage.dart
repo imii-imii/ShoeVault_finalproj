@@ -411,7 +411,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final baseReservations = 15 + (hash % 20); // 15-35 per day
         final basePickups = (baseReservations * 0.7).round() + (hash % 5);
         final pending = (baseReservations * 0.2).round() + (hash % 3);
-        final cancelled = baseReservations - basePickups - pending;
+        final cancelled = (baseReservations - basePickups - pending).clamp(0, baseReservations);
         
         return {
           'totalReservations': baseReservations.toString(),
@@ -428,7 +428,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final baseReservations = 180 + (weekHash % 100); // 180-280 per week
         final basePickups = (baseReservations * 0.75).round() + (weekHash % 20);
         final pending = (baseReservations * 0.15).round() + (weekHash % 15);
-        final cancelled = baseReservations - basePickups - pending;
+        final cancelled = (baseReservations - basePickups - pending).clamp(0, baseReservations);
         
         return {
           'totalReservations': baseReservations.toString(),
@@ -444,7 +444,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final baseReservations = 800 + (monthHash % 600); // 800-1400 per month
         final basePickups = (baseReservations * 0.8).round() + (monthHash % 50);
         final pending = (baseReservations * 0.12).round() + (monthHash % 30);
-        final cancelled = baseReservations - basePickups - pending;
+        final cancelled = (baseReservations - basePickups - pending).clamp(0, baseReservations);
         
         return {
           'totalReservations': _formatNumber(baseReservations),
@@ -461,7 +461,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final baseReservations = 2500 + (quarterHash % 1500); // 2500-4000 per quarter
         final basePickups = (baseReservations * 0.82).round() + (quarterHash % 100);
         final pending = (baseReservations * 0.1).round() + (quarterHash % 50);
-        final cancelled = baseReservations - basePickups - pending;
+        final cancelled = (baseReservations - basePickups - pending).clamp(0, baseReservations);
         
         return {
           'totalReservations': _formatNumber(baseReservations),
@@ -693,19 +693,6 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  // Calculate trend percentage (simulated data based on date)
-  Map<String, double> _getTrendData() {
-    final hash = selectedDate.hashCode.abs();
-    final trendBase = (hash % 50) - 25; // Range from -25% to +25%
-    
-    return {
-      'reservations': trendBase + (hash % 10) - 5,
-      'pickups': trendBase + ((hash * 2) % 10) - 5,
-      'pending': -trendBase + ((hash * 3) % 8) - 4,
-      'cancelled': -trendBase + ((hash * 4) % 6) - 3,
-    };
-  }
-
   double _getMaxYValue() {
     final chartData = getDataForRange()['chartData'] as List<Map<String, double>>;
     double maxVal = 0;
@@ -761,38 +748,9 @@ class _DashboardPageState extends State<DashboardPage> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Track reservations, pickups, and customer patterns',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, color: Colors.green, size: 8),
-                    SizedBox(width: 4),
-                    Text(
-                      'Live Data',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Text(
+            'Track reservations, pickups, and customer patterns',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           SizedBox(height: 16),
           
@@ -930,7 +888,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: 'Total Reservations',
                 value: data['totalReservations'],
                 colorScheme: 'blue',
-                trend: _getTrendData()['reservations']!,
               ),
               _buildSummaryCard(
                 context,
@@ -938,7 +895,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: 'Completed Pickups',
                 value: data['completedPickups'],
                 colorScheme: 'green',
-                trend: _getTrendData()['pickups']!,
               ),
               _buildSummaryCard(
                 context,
@@ -946,7 +902,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: 'Pending Pickups',
                 value: data['pendingPickups'],
                 colorScheme: 'orange',
-                trend: _getTrendData()['pending']!,
               ),
               _buildSummaryCard(
                 context,
@@ -954,7 +909,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 label: 'Cancelled',
                 value: data['cancelled'],
                 colorScheme: 'red',
-                trend: _getTrendData()['cancelled']!,
               ),
             ],
           );
@@ -1048,7 +1002,6 @@ class _DashboardPageState extends State<DashboardPage> {
     required String label,
     required String value,
     required String colorScheme,
-    double? trend,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -1099,34 +1052,12 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          label, 
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ),
-                      if (trend != null) ...[
-                        Icon(
-                          trend >= 0 ? Icons.trending_up : Icons.trending_down,
-                          color: trend >= 0 ? Colors.green : Colors.red,
-                          size: 16,
-                        ),
-                        SizedBox(width: 2),
-                        Text(
-                          '${trend.abs().toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: trend >= 0 ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ],
+                  Text(
+                    label, 
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
                   ),
                 ],
               ),
@@ -1196,7 +1127,7 @@ class _ReportPageState extends State<ReportPage> {
       'date': '2025-06-28',
       'pickup': '2025-06-27',
       'status': 'Cancelled',
-      'days': '7 days overdue'
+      'days': 'Cancelled - 7 days overdue'
     },
     {
       'id': 'REV-002',
@@ -1207,7 +1138,7 @@ class _ReportPageState extends State<ReportPage> {
       'date': '2025-06-28',
       'pickup': '2025-07-02',
       'status': 'Cancelled',
-      'days': '6 days overdue'
+      'days': 'Cancelled - 6 days overdue'
     },
     {
       'id': 'REV-003',
@@ -1217,8 +1148,8 @@ class _ReportPageState extends State<ReportPage> {
       'size': 'Size 44',
       'date': '2025-06-28',
       'pickup': '2025-07-01',
-      'status': 'Expired Today',
-      'days': 'Expires today'
+      'status': 'Pending',
+      'days': 'Pending - Expires today'
     },
     {
       'id': 'REV-004',
@@ -1229,7 +1160,7 @@ class _ReportPageState extends State<ReportPage> {
       'date': '2025-06-16',
       'pickup': '2025-06-22',
       'status': 'Cancelled',
-      'days': '14 days overdue'
+      'days': 'Cancelled - 14 days overdue'
     },
     {
       'id': 'REV-005',
@@ -1240,7 +1171,7 @@ class _ReportPageState extends State<ReportPage> {
       'date': '2025-06-16',
       'pickup': '2025-06-22',
       'status': 'Completed',
-      'days': 'Completed'
+      'days': 'Completed successfully'
     },
     {
       'id': 'REV-006',
@@ -1251,7 +1182,7 @@ class _ReportPageState extends State<ReportPage> {
       'date': '2025-06-22',
       'pickup': '2025-06-30',
       'status': 'Pending',
-      'days': 'Expiring in 2 days'
+      'days': 'Pending - Expiring in 2 days'
     },
   ];
 
@@ -1264,6 +1195,25 @@ class _ReportPageState extends State<ReportPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Reservation $reservationId has been deleted'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _markAsCompleted(String reservationId) {
+    setState(() {
+      final reservationIndex = reservations.indexWhere((reservation) => reservation['id'] == reservationId);
+      if (reservationIndex != -1) {
+        reservations[reservationIndex]['status'] = 'Completed';
+        reservations[reservationIndex]['days'] = 'Completed successfully';
+      }
+    });
+    
+    // Show a confirmation message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reservation $reservationId marked as completed'),
         backgroundColor: Colors.green,
         duration: Duration(seconds: 2),
       ),
@@ -1289,6 +1239,32 @@ class _ReportPageState extends State<ReportPage> {
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCompletionConfirmation(String reservationId, String customerName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Mark as Completed'),
+          content: Text('Are you sure you want to mark the reservation for $customerName as completed?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _markAsCompleted(reservationId);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: Text('Mark Completed'),
             ),
           ],
         );
@@ -1328,7 +1304,8 @@ class _ReportPageState extends State<ReportPage> {
 
   int get expiringTodayCount {
     return reservations.where((reservation) => 
-      reservation['status'] == 'Expired Today'
+      reservation['status'] == 'Pending' && 
+      reservation['days'].contains('Expires today')
     ).length;
   }
 
@@ -1340,7 +1317,7 @@ class _ReportPageState extends State<ReportPage> {
 
   int get pendingCount {
     return reservations.where((reservation) =>
-      reservation['days'].contains('Expiring in')
+      reservation['status'] == 'Pending'
     ).length;
   }
 
@@ -1511,34 +1488,7 @@ class _ReportPageState extends State<ReportPage> {
                 ],
               ),
             ),
-          
-          // Action Buttons
-          Row(
-            children: [
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: Text('Select All'),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black87,
-                  elevation: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                child: Text('Cancel Selected (0)'),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
+
           
           // Data Table
           LayoutBuilder(
@@ -1733,7 +1683,7 @@ class _ReportPageState extends State<ReportPage> {
                       reservation['days'],
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.red[600],
+                        color: _getStatusColor(reservation['status']),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1743,6 +1693,16 @@ class _ReportPageState extends State<ReportPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    if (reservation['status'] == 'Pending')
+                      IconButton(
+                        onPressed: () => _showCompletionConfirmation(
+                          reservation['id'],
+                          reservation['customer'],
+                        ),
+                        icon: Icon(Icons.check, color: Colors.green),
+                        iconSize: 20,
+                        tooltip: 'Mark as Completed',
+                      ),
                     IconButton(
                       onPressed: () => _showDeleteConfirmation(
                         reservation['id'],
@@ -1750,6 +1710,7 @@ class _ReportPageState extends State<ReportPage> {
                       ),
                       icon: Icon(Icons.close, color: Colors.red),
                       iconSize: 20,
+                      tooltip: 'Delete Reservation',
                     ),
                   ],
                 ),
@@ -1830,13 +1791,29 @@ class _ReportPageState extends State<ReportPage> {
               DataCell(Text(reservation['pickup'])),
               DataCell(_buildStatusChip(reservation['status'])),
               DataCell(
-                IconButton(
-                  onPressed: () => _showDeleteConfirmation(
-                    reservation['id'],
-                    reservation['customer'],
-                  ),
-                  icon: Icon(Icons.close, color: Colors.red),
-                  iconSize: 20,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (reservation['status'] == 'Pending')
+                      IconButton(
+                        onPressed: () => _showCompletionConfirmation(
+                          reservation['id'],
+                          reservation['customer'],
+                        ),
+                        icon: Icon(Icons.check, color: Colors.green),
+                        iconSize: 20,
+                        tooltip: 'Mark as Completed',
+                      ),
+                    IconButton(
+                      onPressed: () => _showDeleteConfirmation(
+                        reservation['id'],
+                        reservation['customer'],
+                      ),
+                      icon: Icon(Icons.close, color: Colors.red),
+                      iconSize: 20,
+                      tooltip: 'Delete Reservation',
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1856,13 +1833,17 @@ class _ReportPageState extends State<ReportPage> {
         color = Colors.red;
         backgroundColor = isDark ? Colors.red.withOpacity(0.2) : Colors.red[50]!;
         break;
-      case 'Expired Today':
-        color = Colors.orange;
-        backgroundColor = isDark ? Colors.orange.withOpacity(0.2) : Colors.orange[50]!;
+      case 'Pending':
+        color = Colors.yellow[700]!;
+        backgroundColor = isDark ? Colors.yellow.withOpacity(0.2) : Colors.yellow[50]!;
         break;
       case 'Completed':
         color = Colors.green;
         backgroundColor = isDark ? Colors.green.withOpacity(0.2) : Colors.green[50]!;
+        break;
+      case 'Expired Today':
+        color = Colors.orange;
+        backgroundColor = isDark ? Colors.orange.withOpacity(0.2) : Colors.orange[50]!;
         break;
       default:
         color = Colors.grey;
@@ -1885,6 +1866,19 @@ class _ReportPageState extends State<ReportPage> {
         ),
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Cancelled':
+        return Colors.red;
+      case 'Pending':
+        return Colors.yellow[700]!;
+      case 'Completed':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 }
 
