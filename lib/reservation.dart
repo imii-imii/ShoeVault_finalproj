@@ -615,7 +615,7 @@ class LandingPage extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.black54,
+              color: colorScheme.onSurface.withOpacity(0.7),
               fontSize: isMobile ? 14 : null,
             ),
           ),
@@ -633,6 +633,7 @@ class Product {
   final String imageUrl;
   final String category;
   int stock; // Made mutable
+  final Map<String, int> sizeStock; // Stock per size
 
   Product({
     required this.name,
@@ -641,6 +642,7 @@ class Product {
     required this.imageUrl,
     required this.category,
     required this.stock,
+    required this.sizeStock,
   });
 }
 
@@ -670,20 +672,21 @@ class ProductCatalogScreen extends StatefulWidget {
 
 class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   final List<Product> products = [
-    Product(name: 'Nike Air Max', price: 5995.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Sneakers', stock: 15),
-    Product(name: 'Adidas Ultraboost', price: 7995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Running', stock: 8),
-    Product(name: 'Puma Suede', price: 4595.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Casual', stock: 12),
-    Product(name: 'Converse Chuck Taylor', price: 3495.0, sizes: ['6', '7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 20),
-    Product(name: 'New Balance 574', price: 5295.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 5),
-    Product(name: 'Reebok Classic', price: 4795.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 7),
-    Product(name: 'ASICS Gel-Lyte', price: 5295.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 9),
-    Product(name: 'Fila Disruptor', price: 3995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Sneakers', stock: 14),
-    Product(name: 'Under Armour HOVR', price: 6595.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Running', stock: 6),
-    Product(name: 'Saucony Jazz', price: 4995.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 11),
-    Product(name: 'Jordan 1 Mid', price: 7495.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Sneakers', stock: 3),
+    Product(name: 'Nike Air Max', price: 5995.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Sneakers', stock: 15, sizeStock: {'7': 3, '8': 0, '9': 5, '10': 7}),
+    Product(name: 'Adidas Ultraboost', price: 7995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Running', stock: 8, sizeStock: {'6': 2, '7': 3, '8': 0, '9': 3}),
+    Product(name: 'Puma Suede', price: 4595.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Casual', stock: 12, sizeStock: {'8': 4, '9': 3, '10': 5, '11': 0}),
+    Product(name: 'Converse Chuck Taylor', price: 3495.0, sizes: ['6', '7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 20, sizeStock: {'6': 4, '7': 5, '8': 3, '9': 8, '10': 0}),
+    Product(name: 'New Balance 574', price: 5295.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 5, sizeStock: {'7': 1, '8': 2, '9': 0, '10': 2, '11': 0}),
+    Product(name: 'Reebok Classic', price: 4795.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 7, sizeStock: {'7': 2, '8': 3, '9': 2, '10': 0}),
+    Product(name: 'ASICS Gel-Lyte', price: 5295.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 9, sizeStock: {'8': 3, '9': 0, '10': 4, '11': 2}),
+    Product(name: 'Fila Disruptor', price: 3995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Sneakers', stock: 14, sizeStock: {'6': 4, '7': 5, '8': 5, '9': 0}),
+    Product(name: 'Under Armour HOVR', price: 6595.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Running', stock: 6, sizeStock: {'7': 2, '8': 2, '9': 2, '10': 0}),
+    Product(name: 'Saucony Jazz', price: 4995.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 11, sizeStock: {'8': 3, '9': 4, '10': 4, '11': 0}),
+    Product(name: 'Jordan 1 Mid', price: 7495.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Sneakers', stock: 3, sizeStock: {'7': 1, '8': 0, '9': 1, '10': 1, '11': 0}),
   ];
 
   final Map<String, SelectedProduct> reservedProducts = {};
+  final Map<int, String?> selectedSizes = {}; // Track selected size for each product
   String searchQuery = '';
   String selectedCategory = 'All';
 
@@ -706,9 +709,18 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       final product = products[index];
       final key = '${product.name}_$size';
 
-      // Prevent adding more than available stock
+      // Check if size is out of stock
+      int sizeStock = product.sizeStock[size] ?? 0;
+      if (sizeStock <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Size $size is out of stock for ${product.name}')),
+        );
+        return;
+      }
+
+      // Prevent adding more than available stock for this size
       int alreadyReserved = reservedProducts[key]?.quantity ?? 0;
-      if (alreadyReserved >= product.stock) {
+      if (alreadyReserved >= sizeStock) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Not enough stock for ${product.name} (Size: $size)')),
         );
@@ -728,7 +740,27 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           quantity: 1,
         );
       }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added ${product.name} (Size: $size) to reservation!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
     });
+  }
+
+  void _addToReserveWithSelectedSize(int index) {
+    final selectedSize = selectedSizes[index];
+    if (selectedSize == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a size first')),
+      );
+      return;
+    }
+    _addToReservation(index, selectedSize);
   }
 
   void _removeFromReservation(int index, String size) {
@@ -848,10 +880,17 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   void _deductStocksAfterReservation(List<SelectedProduct> reservedList) {
     setState(() {
       for (var sp in reservedList) {
+        // Deduct from size-specific stock
+        String size = sp.size;
+        int currentSizeStock = sp.product.sizeStock[size] ?? 0;
+        sp.product.sizeStock[size] = (currentSizeStock - sp.quantity).clamp(0, currentSizeStock);
+        
+        // Also deduct from general stock
         sp.product.stock -= sp.quantity;
         if (sp.product.stock < 0) sp.product.stock = 0;
       }
       reservedProducts.clear();
+      selectedSizes.clear(); // Clear selected sizes
     });
   }
 
@@ -1013,7 +1052,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         itemCount: filteredProducts.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: isMobile ? 2 : 4,
-                          childAspectRatio: 0.62,
+                          childAspectRatio: isMobile ? 0.68 : 0.62,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 30,
                         ),
@@ -1162,7 +1201,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   itemCount: filteredProducts.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: isMobile ? 2 : 4,
-                    childAspectRatio: 0.62,
+                    childAspectRatio: isMobile ? 0.68 : 0.62,
                     crossAxisSpacing: isMobile ? 12 : 20,
                     mainAxisSpacing: isMobile ? 16 : 30,
                   ),
@@ -1200,7 +1239,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final containerWidth = constraints.maxWidth;
-            final imageHeight = containerWidth * 0.6;
+            final isMobile = containerWidth < 200;
+            final imageHeight = containerWidth * (isMobile ? 0.5 : 0.6);
             final imageMargin = containerWidth * 0.08;
             
             return Column(
@@ -1236,64 +1276,132 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         Text(
                           product.name,
                           style: TextStyle(
-                            fontSize: containerWidth * 0.08,
+                            fontSize: isMobile ? 12 : containerWidth * 0.08,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: isMobile ? 2 : 4),
                         Text(
                           '₱${product.price.toStringAsFixed(2)}',
                           style: TextStyle(
-                            fontSize: containerWidth * 0.07,
+                            fontSize: isMobile ? 11 : containerWidth * 0.07,
                             color: Colors.green[600],
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: isMobile ? 2 : 4),
                         Text(
                           'Stock: ${product.stock}',
                           style: TextStyle(
-                            fontSize: containerWidth * 0.06,
+                            fontSize: isMobile ? 10 : containerWidth * 0.06,
                             color: product.stock > 5 ? Colors.green : Colors.red,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        SizedBox(height: isMobile ? 4 : 8),
                         
                         // Size selection
                         Text(
                           'Sizes:',
                           style: TextStyle(
-                            fontSize: containerWidth * 0.06,
+                            fontSize: isMobile ? 10 : containerWidth * 0.06,
                             fontWeight: FontWeight.w500,
                             color: colorScheme.onSurface,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        SizedBox(height: isMobile ? 2 : 4),
                         Wrap(
-                          spacing: 4,
+                          spacing: isMobile ? 2 : 4,
                           children: product.sizes.map((size) {
+                            int sizeStock = product.sizeStock[size] ?? 0;
+                            bool isOutOfStock = sizeStock <= 0;
+                            bool isSelected = selectedSizes[index] == size;
+                            
                             return GestureDetector(
-                              onTap: product.stock > 0 ? () => _addToReservation(index, size) : null,
+                              onTap: !isOutOfStock ? () {
+                                setState(() {
+                                  selectedSizes[index] = size;
+                                });
+                              } : null,
                               child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: product.stock > 0 ? colorScheme.primary : Colors.grey),
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: product.stock > 0 ? colorScheme.primary.withOpacity(0.1) : Colors.grey[100],
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 4 : 8, 
+                                  vertical: isMobile ? 2 : 4
                                 ),
-                                child: Text(
-                                  size,
-                                  style: TextStyle(
-                                    fontSize: containerWidth * 0.05,
-                                    color: product.stock > 0 ? colorScheme.primary : Colors.grey,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: isOutOfStock 
+                                        ? Colors.red 
+                                        : isSelected 
+                                            ? colorScheme.primary
+                                            : colorScheme.primary.withOpacity(0.5),
+                                    width: isSelected ? 2 : 1,
                                   ),
+                                  borderRadius: BorderRadius.circular(4),
+                                  color: isOutOfStock 
+                                      ? Colors.red.withOpacity(0.1) 
+                                      : isSelected
+                                          ? colorScheme.primary.withOpacity(0.2)
+                                          : colorScheme.primary.withOpacity(0.1),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      size,
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 9 : containerWidth * 0.05,
+                                        color: isOutOfStock 
+                                            ? Colors.red 
+                                            : isSelected
+                                                ? colorScheme.primary
+                                                : colorScheme.primary.withOpacity(0.7),
+                                        fontWeight: isOutOfStock || isSelected
+                                            ? FontWeight.bold 
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
+                                    if (isOutOfStock) 
+                                      Text(
+                                        ' ✗',
+                                        style: TextStyle(
+                                          fontSize: isMobile ? 8 : containerWidth * 0.04,
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
                           }).toList(),
+                        ),
+                        SizedBox(height: isMobile ? 4 : 8),
+                        
+                        // Add to Reserve button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => _addToReserveWithSelectedSize(index),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: Text(
+                              'Add to Reserve',
+                              style: TextStyle(
+                                fontSize: isMobile ? 10 : containerWidth * 0.06,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
