@@ -180,7 +180,7 @@ class _OwnerPageState extends State<OwnerPage> {
 
   final List<Map<String, dynamic>> _drawerItems = [
     {'icon': Icons.analytics, 'title' : 'Dashboard'},
-    {'icon': Icons.assignment, 'title' : 'Cancellation Report'}
+    {'icon': Icons.assignment, 'title' : 'Reservation Report'}
   ];
 
   void _onSelectItem(int index) {
@@ -920,65 +920,93 @@ class _DashboardPageState extends State<DashboardPage> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: 8),
-          Container(
-            height: 300, // Fixed height instead of aspect ratio
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: BarChart(
-              key: ValueKey(selectedRange), // Add key for smooth transitions
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: _getMaxYValue(),
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true, 
-                      reservedSize: 50, // Increased from 28 to 50
-                      interval: _getYAxisInterval(),
-                    ),
+          GestureDetector(
+            onPanEnd: (details) {
+              // Detect swipe direction based on velocity
+              if (details.velocity.pixelsPerSecond.dx > 500) {
+                // Swipe right - go to previous period
+                if (_canGoToPrevious()) {
+                  _goToPreviousPeriod();
+                }
+              } else if (details.velocity.pixelsPerSecond.dx < -500) {
+                // Swipe left - go to next period
+                if (_canGoToNext()) {
+                  _goToNextPeriod();
+                }
+              }
+            },
+            child: Container(
+              height: 300, // Fixed height instead of aspect ratio
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40, // Added reserved space for bottom labels
-                      getTitlesWidget: (value, meta) {
-                        final labels = getDataForRange()['chartLabels'] as List<String>;
-                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              labels[value.toInt()],
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                ],
+              ),
+              child: BarChart(
+                key: ValueKey(selectedRange), // Add key for smooth transitions
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: _getMaxYValue(),
+                  barTouchData: BarTouchData(enabled: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: 50, // Increased from 28 to 50
+                        interval: _getYAxisInterval(),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40, // Added reserved space for bottom labels
+                        getTitlesWidget: (value, meta) {
+                          final labels = getDataForRange()['chartLabels'] as List<String>;
+                          if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                            return Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                labels[value.toInt()],
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                        return Text('');
-                      },
+                            );
+                          }
+                          return Text('');
+                        },
+                      ),
                     ),
+                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  gridData: FlGridData(show: true),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _getBarGroups(context),
                 ),
-                gridData: FlGridData(show: true),
-                borderData: FlBorderData(show: false),
-                barGroups: _getBarGroups(context),
+              ),
+            ),
+          ),
+          SizedBox(height: 4),
+          // Swipe hint
+          Center(
+            child: Text(
+              '← Swipe to navigate between periods →',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
@@ -1336,7 +1364,7 @@ class _ReportPageState extends State<ReportPage> {
         children: [
           // Title
           Text(
-            'Reservation Cancellation Report',
+            'Reservation Report',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
