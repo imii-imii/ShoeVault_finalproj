@@ -875,12 +875,12 @@ class _DashboardPageState extends State<DashboardPage> {
               final data = getDataForRange();
               
               return GridView.count(
-                crossAxisCount: isMobile ? 1 : 2,
+                crossAxisCount: isMobile ? 2 : 4,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: isMobile ? 3.5 : 2.2,
+                childAspectRatio: isMobile ? 1.2 : 1.5,
                 children: [
               _buildSummaryCard(
                 context,
@@ -1757,7 +1757,7 @@ class _ReportPageState extends State<ReportPage> {
         columnSpacing: 20,
         headingTextStyle: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
+          color: Theme.of(context).textTheme.titleMedium?.color,
         ),
         columns: [
           DataColumn(label: Text('RESERVATION ID')),
