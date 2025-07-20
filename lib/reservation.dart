@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'reservation_service.dart';
+import 'stock_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ReservationService.initializeWithSampleData();
   runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   State<MyApp> createState() => _MyAppState();
   
@@ -39,8 +45,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.light(
           primary: const Color(0xFF0730E8), // Main brand color
           secondary: const Color(0xFF4D7CFF), // Secondary color
-          surface: Colors.white, // Background color for cards, etc.
-          background: Colors.white, // Scaffold background
+          surface: Colors.white, // Scaffold background
           onPrimary: Colors.white, // Text/icon color on primary color
           onSecondary: Colors.white, // Text/icon color on secondary color
           onSurface: Colors.black87, // Default text color
@@ -66,8 +71,7 @@ class _MyAppState extends State<MyApp> {
         colorScheme: ColorScheme.dark(
           primary: const Color(0xFF4D7CFF), // Slightly lighter for dark mode
           secondary: const Color(0xFF7B9EFF), // Secondary color
-          surface: const Color(0xFF1E1E1E), // Background color for cards, etc.
-          background: const Color(0xFF121212), // Scaffold background
+          surface: const Color(0xFF1E1E1E), // Scaffold background
           onPrimary: Colors.white, // Text/icon color on primary color
           onSecondary: Colors.white, // Text/icon color on secondary color
           onSurface: Colors.white, // Default text color
@@ -95,6 +99,8 @@ class _MyAppState extends State<MyApp> {
 }
 
 class LandingPage extends StatelessWidget {
+  const LandingPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -615,7 +621,7 @@ class LandingPage extends StatelessWidget {
             description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.7),
+              color: Colors.black54,
               fontSize: isMobile ? 14 : null,
             ),
           ),
@@ -632,8 +638,7 @@ class Product {
   final List<String> sizes;
   final String imageUrl;
   final String category;
-  int stock; // Made mutable
-  final Map<String, int> sizeStock; // Stock per size
+  Map<String, int> stockPerSize; // Stock per size
 
   Product({
     required this.name,
@@ -641,9 +646,23 @@ class Product {
     required this.sizes,
     required this.imageUrl,
     required this.category,
-    required this.stock,
-    required this.sizeStock,
+    required this.stockPerSize,
   });
+
+  // Get total stock across all sizes
+  int get totalStock {
+    return stockPerSize.values.fold(0, (sum, stock) => sum + stock);
+  }
+
+  // Get stock for a specific size
+  int getStockForSize(String size) {
+    return stockPerSize[size] ?? 0;
+  }
+
+  // Check if a size is available
+  bool isSizeAvailable(String size) {
+    return getStockForSize(size) > 0;
+  }
 }
 
 class ProductCatalogApp extends StatelessWidget {
@@ -671,22 +690,98 @@ class ProductCatalogScreen extends StatefulWidget {
 }
 
 class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
-  final List<Product> products = [
-    Product(name: 'Nike Air Max', price: 5995.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Sneakers', stock: 15, sizeStock: {'7': 3, '8': 0, '9': 5, '10': 7}),
-    Product(name: 'Adidas Ultraboost', price: 7995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Running', stock: 8, sizeStock: {'6': 2, '7': 3, '8': 0, '9': 3}),
-    Product(name: 'Puma Suede', price: 4595.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Casual', stock: 12, sizeStock: {'8': 4, '9': 3, '10': 5, '11': 0}),
-    Product(name: 'Converse Chuck Taylor', price: 3495.0, sizes: ['6', '7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 20, sizeStock: {'6': 4, '7': 5, '8': 3, '9': 8, '10': 0}),
-    Product(name: 'New Balance 574', price: 5295.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 5, sizeStock: {'7': 1, '8': 2, '9': 0, '10': 2, '11': 0}),
-    Product(name: 'Reebok Classic', price: 4795.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Casual', stock: 7, sizeStock: {'7': 2, '8': 3, '9': 2, '10': 0}),
-    Product(name: 'ASICS Gel-Lyte', price: 5295.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 9, sizeStock: {'8': 3, '9': 0, '10': 4, '11': 2}),
-    Product(name: 'Fila Disruptor', price: 3995.0, sizes: ['6', '7', '8', '9'], imageUrl: '', category: 'Sneakers', stock: 14, sizeStock: {'6': 4, '7': 5, '8': 5, '9': 0}),
-    Product(name: 'Under Armour HOVR', price: 6595.0, sizes: ['7', '8', '9', '10'], imageUrl: '', category: 'Running', stock: 6, sizeStock: {'7': 2, '8': 2, '9': 2, '10': 0}),
-    Product(name: 'Saucony Jazz', price: 4995.0, sizes: ['8', '9', '10', '11'], imageUrl: '', category: 'Running', stock: 11, sizeStock: {'8': 3, '9': 4, '10': 4, '11': 0}),
-    Product(name: 'Jordan 1 Mid', price: 7495.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: '', category: 'Sneakers', stock: 3, sizeStock: {'7': 1, '8': 0, '9': 1, '10': 1, '11': 0}),
-  ];
+  List<Product> products = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProductsWithStock();
+  }
+
+  Future<void> _loadProductsWithStock() async {
+    // Load products immediately with default stock values
+    setState(() {
+      products = [
+        Product(name: 'Nike Air Max', price: 5995.0, sizes: ['7', '8', '9', '10'], imageUrl: 'assets/pictures/ar1.png', category: 'Sneakers', stockPerSize: {'7': 3, '8': 4, '9': 5, '10': 3}),
+        Product(name: 'Adidas Ultraboost', price: 7995.0, sizes: ['6', '7', '8', '9'], imageUrl: 'assets/pictures/ar2.png', category: 'Running', stockPerSize: {'6': 2, '7': 3, '8': 2, '9': 1}),
+        Product(name: 'Puma Suede', price: 4595.0, sizes: ['8', '9', '10', '11'], imageUrl: 'assets/pictures/ar3.png', category: 'Casual', stockPerSize: {'8': 3, '9': 4, '10': 3, '11': 2}),
+        Product(name: 'Nike Air Jordan', price: 3495.0, sizes: ['6', '7', '8', '9', '10'], imageUrl: 'assets/pictures/ar4.png', category: 'Casual', stockPerSize: {'6': 4, '7': 5, '8': 4, '9': 4, '10': 3}),
+        Product(name: 'New Balance 574', price: 5295.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: 'assets/pictures/ar5.png', category: 'Running', stockPerSize: {'7': 1, '8': 2, '9': 1, '10': 1, '11': 0}),
+        Product(name: 'Reebok Classic', price: 4795.0, sizes: ['7', '8', '9', '10'], imageUrl: 'assets/pictures/ar6.png', category: 'Casual', stockPerSize: {'7': 2, '8': 2, '9': 2, '10': 1}),
+        Product(name: 'ASICS Gel-Lyte', price: 5295.0, sizes: ['8', '9', '10', '11'], imageUrl: 'assets/pictures/ar7.png', category: 'Running', stockPerSize: {'8': 2, '9': 3, '10': 2, '11': 2}),
+        Product(name: 'Fila Disruptor', price: 3995.0, sizes: ['6', '7', '8', '9'], imageUrl: 'assets/pictures/ar8.png', category: 'Sneakers', stockPerSize: {'6': 3, '7': 4, '8': 4, '9': 3}),
+        Product(name: 'Under Armour HOVR', price: 6595.0, sizes: ['7', '8', '9', '10'], imageUrl: 'assets/pictures/ar9.png', category: 'Running', stockPerSize: {'7': 2, '8': 2, '9': 1, '10': 1}),
+        Product(name: 'Saucony Jazz', price: 4995.0, sizes: ['8', '9', '10', '11'], imageUrl: 'assets/pictures/ar10.png', category: 'Running', stockPerSize: {'8': 3, '9': 3, '10': 3, '11': 2}),
+        Product(name: 'Jordan 1 Mid', price: 7495.0, sizes: ['7', '8', '9', '10', '11'], imageUrl: 'assets/pictures/ar11.png', category: 'Sneakers', stockPerSize: {'7': 1, '8': 1, '9': 1, '10': 0, '11': 0}),
+      ];
+      isLoading = false;
+    });
+    
+    // Load actual stock data in background and update if different
+    try {
+      final stocks = await StockService.initializeStocks();
+      
+      // Only update if there are actual differences
+      bool needsUpdate = false;
+      for (int i = 0; i < products.length; i++) {
+        final productName = products[i].name;
+        final actualStocks = stocks[productName];
+        if (actualStocks != null) {
+          // Check if any stock values are different
+          for (var entry in actualStocks.entries) {
+            if (products[i].stockPerSize[entry.key] != entry.value) {
+              needsUpdate = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (needsUpdate) {
+        setState(() {
+          for (int i = 0; i < products.length; i++) {
+            final productName = products[i].name;
+            final actualStocks = stocks[productName];
+            if (actualStocks != null) {
+              products[i].stockPerSize = Map.from(actualStocks);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // If stock loading fails, keep default values
+      print('Stock loading failed: $e');
+    }
+  }
+
+  Future<void> _refreshStockData() async {
+    setState(() {
+      isLoading = true;
+    });
+    
+    try {
+      final stocks = await StockService.initializeStocks();
+      
+      setState(() {
+        for (int i = 0; i < products.length; i++) {
+          final productName = products[i].name;
+          final actualStocks = stocks[productName];
+          if (actualStocks != null) {
+            products[i].stockPerSize = Map.from(actualStocks);
+          }
+        }
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Stock refresh failed: $e');
+    }
+  }
 
   final Map<String, SelectedProduct> reservedProducts = {};
-  final Map<int, String?> selectedSizes = {}; // Track selected size for each product
   String searchQuery = '';
   String selectedCategory = 'All';
 
@@ -709,18 +804,10 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       final product = products[index];
       final key = '${product.name}_$size';
 
-      // Check if size is out of stock
-      int sizeStock = product.sizeStock[size] ?? 0;
-      if (sizeStock <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Size $size is out of stock for ${product.name}')),
-        );
-        return;
-      }
-
       // Prevent adding more than available stock for this size
       int alreadyReserved = reservedProducts[key]?.quantity ?? 0;
-      if (alreadyReserved >= sizeStock) {
+      int availableStock = product.getStockForSize(size);
+      if (alreadyReserved >= availableStock) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Not enough stock for ${product.name} (Size: $size)')),
         );
@@ -740,27 +827,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           quantity: 1,
         );
       }
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Added ${product.name} (Size: $size) to reservation!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
     });
-  }
-
-  void _addToReserveWithSelectedSize(int index) {
-    final selectedSize = selectedSizes[index];
-    if (selectedSize == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a size first')),
-      );
-      return;
-    }
-    _addToReservation(index, selectedSize);
   }
 
   void _removeFromReservation(int index, String size) {
@@ -877,21 +944,299 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   }
 
   // Deduct stocks after reservation is successful
-  void _deductStocksAfterReservation(List<SelectedProduct> reservedList) {
+  void _deductStocksAfterReservation(List<SelectedProduct> reservedList) async {
+    // Create a map of stock deductions per product and size
+    Map<String, Map<String, int>> stockDeductions = {};
+    
     setState(() {
       for (var sp in reservedList) {
-        // Deduct from size-specific stock
-        String size = sp.size;
-        int currentSizeStock = sp.product.sizeStock[size] ?? 0;
-        sp.product.sizeStock[size] = (currentSizeStock - sp.quantity).clamp(0, currentSizeStock);
+        // Update local stock
+        final currentStock = sp.product.getStockForSize(sp.size);
+        sp.product.stockPerSize[sp.size] = (currentStock - sp.quantity).clamp(0, double.infinity).toInt();
         
-        // Also deduct from general stock
-        sp.product.stock -= sp.quantity;
-        if (sp.product.stock < 0) sp.product.stock = 0;
+        // Prepare for storage update
+        if (!stockDeductions.containsKey(sp.product.name)) {
+          stockDeductions[sp.product.name] = {};
+        }
+        stockDeductions[sp.product.name]![sp.size] = sp.quantity;
       }
       reservedProducts.clear();
-      selectedSizes.clear(); // Clear selected sizes
     });
+    
+    // Save stock changes to persistent storage
+    await StockService.deductStocks(stockDeductions);
+    
+    // Show success message with stock updates
+    String stockUpdateMessage = '✅ Reservation successful!\n\nStock updated:';
+    for (var sp in reservedList) {
+      stockUpdateMessage += '\n• ${sp.product.name} (${sp.size}): -${sp.quantity} units';
+    }
+    stockUpdateMessage += '\n\nAll items have been reserved successfully!';
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(stockUpdateMessage),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showSizeSelectionDialog(BuildContext context, Product product, int index) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: isMobile ? screenWidth * 0.9 : 500,
+            constraints: BoxConstraints(
+              maxWidth: 600,
+              minWidth: 300,
+            ),
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Icon(
+                      Icons.shopping_bag,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Select Size',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close),
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                
+                // Product name and stock info
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: product.totalStock > 10 
+                              ? Colors.green.withOpacity(0.2)
+                              : product.totalStock > 5 
+                                  ? Colors.orange.withOpacity(0.2)
+                                  : Colors.red.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              product.totalStock > 10 
+                                  ? Icons.inventory_2
+                                  : product.totalStock > 5 
+                                      ? Icons.warning
+                                      : Icons.error,
+                              size: 16,
+                              color: product.totalStock > 10 
+                                  ? Colors.green
+                                  : product.totalStock > 5 
+                                      ? Colors.orange
+                                      : Colors.red,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Total Available: ${product.totalStock}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: product.totalStock > 10 
+                                    ? Colors.green
+                                    : product.totalStock > 5 
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                
+                // Instruction text
+                Text(
+                  'Choose your preferred size:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 20),
+                
+                // Size buttons
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: product.sizes.map((size) {
+                    final sizeStock = product.getStockForSize(size);
+                    final isAvailable = sizeStock > 0;
+                    
+                    return SizedBox(
+                      width: isMobile ? 80 : 100,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isAvailable ? () {
+                          Navigator.pop(context);
+                          _addToReservation(index, size);
+                          
+                          // Show enhanced confirmation with stock info
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${product.name} (Size: $size) added to reservation',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Quantity: 1 | Available: $sizeStock',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              duration: Duration(seconds: 3),
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              action: SnackBarAction(
+                                label: 'View Cart',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                  // You could add navigation to cart here if needed
+                                },
+                              ),
+                            ),
+                          );
+                        } : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isAvailable 
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: isAvailable ? 2 : 0,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              size,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (!isAvailable)
+                              Text(
+                                'Out',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 24),
+                
+                // Cancel button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -899,8 +1244,36 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        appBar: AppBar(
+          title: Text('ShoeVault Catalog'),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: colorScheme.primary,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Loading product catalog...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
           title: Row(
             children: [
@@ -914,6 +1287,21 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+              ),
+              // Refresh button
+              IconButton(
+                icon: Icon(Icons.refresh, color: Colors.white),
+                onPressed: () async {
+                  await _refreshStockData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Stock data refreshed'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+                tooltip: 'Refresh Stock Data',
               ),
               // Theme toggle button
               IconButton(
@@ -1052,7 +1440,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         itemCount: filteredProducts.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: isMobile ? 2 : 4,
-                          childAspectRatio: isMobile ? 0.68 : 0.62,
+                          childAspectRatio: 0.65,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 30,
                         ),
@@ -1201,7 +1589,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   itemCount: filteredProducts.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: isMobile ? 2 : 4,
-                    childAspectRatio: isMobile ? 0.68 : 0.62,
+                    childAspectRatio: 0.65,
                     crossAxisSpacing: isMobile ? 12 : 20,
                     mainAxisSpacing: isMobile ? 16 : 30,
                   ),
@@ -1239,14 +1627,13 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final containerWidth = constraints.maxWidth;
-            final isMobile = containerWidth < 200;
-            final imageHeight = containerWidth * (isMobile ? 0.5 : 0.6);
-            final imageMargin = containerWidth * 0.08;
+            final imageHeight = containerWidth * 0.55;
+            final imageMargin = containerWidth * 0.06;
             
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image placeholder
+                // Product Image
                 Container(
                   height: imageHeight,
                   margin: EdgeInsets.all(imageMargin),
@@ -1256,14 +1643,35 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         : Colors.grey[200],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Center(
-                    child: Icon(
-                      Icons.image,
-                      size: imageHeight * 0.4,
-                      color: colorScheme.brightness == Brightness.dark 
-                          ? Colors.grey[600] 
-                          : Colors.grey[400],
-                    ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: product.imageUrl.isNotEmpty
+                        ? Image.asset(
+                            product.imageUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: imageHeight * 0.4,
+                                  color: colorScheme.brightness == Brightness.dark 
+                                      ? Colors.grey[600] 
+                                      : Colors.grey[400],
+                                ),
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Icon(
+                              Icons.image,
+                              size: imageHeight * 0.4,
+                              color: colorScheme.brightness == Brightness.dark 
+                                  ? Colors.grey[600] 
+                                  : Colors.grey[400],
+                            ),
+                          ),
                   ),
                 ),
                 
@@ -1276,130 +1684,118 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         Text(
                           product.name,
                           style: TextStyle(
-                            fontSize: isMobile ? 12 : containerWidth * 0.08,
+                            fontSize: containerWidth * 0.08,
                             fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: isMobile ? 2 : 4),
+                        SizedBox(height: 6),
                         Text(
                           '₱${product.price.toStringAsFixed(2)}',
                           style: TextStyle(
-                            fontSize: isMobile ? 11 : containerWidth * 0.07,
+                            fontSize: containerWidth * 0.07,
                             color: Colors.green[600],
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: isMobile ? 2 : 4),
-                        Text(
-                          'Stock: ${product.stock}',
-                          style: TextStyle(
-                            fontSize: isMobile ? 10 : containerWidth * 0.06,
-                            color: product.stock > 5 ? Colors.green : Colors.red,
+                        SizedBox(height: 6),
+                                                Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: product.totalStock > 10 
+                                ? Colors.green.withOpacity(0.1)
+                                : product.totalStock > 5 
+                                    ? Colors.orange.withOpacity(0.1)
+                                    : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: product.totalStock > 10 
+                                  ? Colors.green
+                                  : product.totalStock > 5 
+                                      ? Colors.orange
+                                      : Colors.red,
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: isMobile ? 4 : 8),
-                        
-                        // Size selection
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                product.totalStock > 10 
+                                    ? Icons.inventory_2
+                                    : product.totalStock > 5 
+                                        ? Icons.warning
+                                        : Icons.error,
+                                size: containerWidth * 0.05,
+                                color: product.totalStock > 10 
+                                    ? Colors.green
+                                    : product.totalStock > 5 
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                              SizedBox(width: 4),
                         Text(
-                          'Sizes:',
+                          'Stock: ${product.totalStock}',
                           style: TextStyle(
-                            fontSize: isMobile ? 10 : containerWidth * 0.06,
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: isMobile ? 2 : 4),
-                        Wrap(
-                          spacing: isMobile ? 2 : 4,
-                          children: product.sizes.map((size) {
-                            int sizeStock = product.sizeStock[size] ?? 0;
-                            bool isOutOfStock = sizeStock <= 0;
-                            bool isSelected = selectedSizes[index] == size;
-                            
-                            return GestureDetector(
-                              onTap: !isOutOfStock ? () {
-                                setState(() {
-                                  selectedSizes[index] = size;
-                                });
-                              } : null,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: isMobile ? 4 : 8, 
-                                  vertical: isMobile ? 2 : 4
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: isOutOfStock 
-                                        ? Colors.red 
-                                        : isSelected 
-                                            ? colorScheme.primary
-                                            : colorScheme.primary.withOpacity(0.5),
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: isOutOfStock 
-                                      ? Colors.red.withOpacity(0.1) 
-                                      : isSelected
-                                          ? colorScheme.primary.withOpacity(0.2)
-                                          : colorScheme.primary.withOpacity(0.1),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      size,
-                                      style: TextStyle(
-                                        fontSize: isMobile ? 9 : containerWidth * 0.05,
-                                        color: isOutOfStock 
-                                            ? Colors.red 
-                                            : isSelected
-                                                ? colorScheme.primary
-                                                : colorScheme.primary.withOpacity(0.7),
-                                        fontWeight: isOutOfStock || isSelected
-                                            ? FontWeight.bold 
-                                            : FontWeight.normal,
-                                      ),
-                                    ),
-                                    if (isOutOfStock) 
-                                      Text(
-                                        ' ✗',
-                                        style: TextStyle(
-                                          fontSize: isMobile ? 8 : containerWidth * 0.04,
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                  ],
+                            fontSize: containerWidth * 0.06,
+                                  fontWeight: FontWeight.w600,
+                                  color: product.totalStock > 10 
+                                      ? Colors.green
+                                      : product.totalStock > 5 
+                                          ? Colors.orange
+                                          : Colors.red,
                                 ),
                               ),
-                            );
-                          }).toList(),
+                            ],
+                          ),
                         ),
-                        SizedBox(height: isMobile ? 4 : 8),
+                        SizedBox(height: 8),
                         
-                        // Add to Reserve button
+
+                        
+                                                // Add to Reservation button
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            onPressed: () => _addToReserveWithSelectedSize(index),
+                            onPressed: product.totalStock > 0 ? () {
+                              _showSizeSelectionDialog(context, product, index);
+                            } : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
+                              backgroundColor: product.totalStock > 0 ? colorScheme.primary : Colors.grey,
                               foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: isMobile ? 6 : 8),
+                              padding: EdgeInsets.symmetric(vertical: 8),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(15),
                               ),
-                              elevation: 2,
                             ),
-                            child: Text(
-                              'Add to Reserve',
-                              style: TextStyle(
-                                fontSize: isMobile ? 10 : containerWidth * 0.06,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (product.totalStock > 0) ...[
+                                  Icon(
+                                    Icons.add_shopping_cart,
+                                    size: containerWidth * 0.05,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 6),
+                                ] else ...[
+                                  Icon(
+                                    Icons.block,
+                                    size: containerWidth * 0.05,
+                                    color: Colors.white,
+                                  ),
+                                  SizedBox(width: 6),
+                                ],
+                        Text(
+                                  product.totalStock > 0 ? 'Add to Reservation' : 'Out of Stock',
+                          style: TextStyle(
+                            fontSize: containerWidth * 0.06,
+                            fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -1503,7 +1899,35 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: Text('Confirm Reservation'),
-          content: Text('Are you sure you want to submit your reservation?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Are you sure you want to submit your reservation?'),
+              SizedBox(height: 16),
+              Text(
+                'Stock will be deducted:',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+              ),
+              SizedBox(height: 8),
+              ...widget.selectedProducts.map((sp) => Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Text('• ${sp.product.name} (${sp.size}): '),
+                    Text(
+                      '${sp.quantity} unit(s)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    Text(' (${sp.product.getStockForSize(sp.size)} → ${sp.product.getStockForSize(sp.size) - sp.quantity})'),
+                  ],
+                ),
+              )),
+            ],
+          ),
           actions: [
             TextButton(
               child: Text('Cancel'),
@@ -1511,8 +1935,21 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
             ),
             TextButton(
               child: Text('Confirm'),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // Close the dialog
+
+                // Save reservation to storage
+                for (var selectedProduct in widget.selectedProducts) {
+                  await ReservationService.createReservation(
+                    customer: name,
+                    email: email,
+                    phone: phone,
+                    shoe: selectedProduct.product.name,
+                    size: selectedProduct.size,
+                    date: selectedDate!.toIso8601String().split('T')[0],
+                    pickup: selectedTime!.format(context),
+                  );
+                }
 
                 // Deduct stocks in parent (ProductCatalogScreen) via callback
                 if (widget.onReservationSuccess != null) {
@@ -1561,7 +1998,68 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
               SizedBox(height: 8),
               ...widget.selectedProducts.map((sp) => ListTile(
                     title: Text('${sp.product.name} (x${sp.quantity})'),
-                    subtitle: Text('Size: ${sp.size} | ₱${(sp.product.price * sp.quantity).toStringAsFixed(2)}'),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Size: ${sp.size} | ₱${(sp.product.price * sp.quantity).toStringAsFixed(2)}'),
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: sp.product.getStockForSize(sp.size) > 10 
+                                    ? Colors.green.withOpacity(0.1)
+                                    : sp.product.getStockForSize(sp.size) > 5 
+                                        ? Colors.orange.withOpacity(0.1)
+                                        : Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: sp.product.getStockForSize(sp.size) > 10 
+                                      ? Colors.green
+                                      : sp.product.getStockForSize(sp.size) > 5 
+                                          ? Colors.orange
+                                          : Colors.red,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                'Stock: ${sp.product.getStockForSize(sp.size)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: sp.product.getStockForSize(sp.size) > 10 
+                                      ? Colors.green
+                                      : sp.product.getStockForSize(sp.size) > 5 
+                                          ? Colors.orange
+                                          : Colors.red,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: Colors.red,
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                'Will deduct: ${sp.quantity}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   )),
               Divider(),
               Text('Total: ₱${total.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1665,6 +2163,21 @@ class ReceiptScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Reservation Ticket'),
         centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            tooltip: 'Go to Home',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -1816,12 +2329,48 @@ class ReceiptScreen extends StatelessWidget {
                 SizedBox(height: 20),
                 Text('Please present this receipt when picking up your items.',
                     style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: colorScheme.onSurface.withOpacity(0.7))),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.popUntil(context, (route) => route.isFirst);
-                  },
-                  child: Text('Back to Home'),
+                SizedBox(height: 20),
+                
+                // Navigation buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context); // Go back to previous screen
+                        },
+                        icon: Icon(Icons.arrow_back),
+                        label: Text('Back to Catalog'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.surface,
+                          foregroundColor: colorScheme.primary,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: colorScheme.primary),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.popUntil(context, (route) => route.isFirst);
+                        },
+                        icon: Icon(Icons.home),
+                        label: Text('Go to Home'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

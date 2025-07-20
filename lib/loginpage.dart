@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'adminpage.dart' as admin;
+import 'reservation.dart' as reservation;
 
 void main() {
   runApp(const MyApp());
@@ -57,59 +58,101 @@ class LoginScreen extends StatelessWidget {
             end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              width: 450, // Expanded container
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.white.withOpacity(0.95),
-                borderRadius: BorderRadius.circular(18.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(2, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Bigger logo
-                  SizedBox(
-                    width: 300,
-                    height: 220,
-                    child: Image.asset('assets/pictures/shoevault_logo.png'),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Admin Login',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontFamily: 'OpenSans',
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.blue.shade900,
+        child: Column(
+          children: [
+            // Main login container
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    constraints: const BoxConstraints(
+                      maxWidth: 500,
+                      minWidth: 300,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.05,
+                      vertical: 40.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.05)
+                          : Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(18.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(2, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Responsive logo
+                        Container(
+                          constraints: const BoxConstraints(
+                            maxWidth: 400,
+                            minWidth: 200,
+                            maxHeight: 300,
+                            minHeight: 150,
+                          ),
+                          width: MediaQuery.of(context).size.width * 0.6,
+                          height: MediaQuery.of(context).size.height * 0.25,
+                          child: Image.asset('assets/pictures/shoevault_logo.png'),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Admin Login',
+                          style: TextStyle(
+                            fontSize: (MediaQuery.of(context).size.width * 0.05).clamp(18.0, 28.0),
+                            fontFamily: 'OpenSans',
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.blue.shade900,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Access the ShoeVault admin dashboard to manage inventory, users, and reports.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: (MediaQuery.of(context).size.width * 0.03).clamp(12.0, 18.0),
+                            fontFamily: 'OpenSans',
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        const LoginForm(),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Access the ShoeVault admin dashboard to manage inventory, users, and reports.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'OpenSans',
-                      color: isDark ? Colors.white70 : Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  const LoginForm(),
-                ],
+                ),
               ),
             ),
-          ),
+            // Reservation button at the bottom
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => reservation.MyApp()),
+                  );
+                },
+                icon: const Icon(Icons.shopping_bag),
+                label: const Text('Go to Reservation'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.blue.shade600,
+                  foregroundColor: isDark ? Colors.white : Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -232,10 +275,10 @@ class _LoginFormState extends State<LoginForm> {
                 ),
               ),
               onPressed: _submit,
-              child: const Text(
+              child: Text(
                 'Login',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: (MediaQuery.of(context).size.width * 0.04).clamp(14.0, 20.0),
                   fontWeight: FontWeight.bold,
                 ),
               ),

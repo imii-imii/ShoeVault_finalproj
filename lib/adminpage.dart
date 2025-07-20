@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'loginpage.dart' as login;
+import 'reservation_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ReservationService.initializeWithSampleData();
   runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   State<MyApp> createState() => _MyAppState();
   
@@ -180,7 +185,7 @@ class _OwnerPageState extends State<OwnerPage> {
 
   final List<Map<String, dynamic>> _drawerItems = [
     {'icon': Icons.analytics, 'title' : 'Dashboard'},
-    {'icon': Icons.assignment, 'title' : 'Reservation Report'}
+    {'icon': Icons.assignment, 'title' : 'Cancellation Report'}
   ];
 
   void _onSelectItem(int index) {
@@ -210,31 +215,16 @@ class _OwnerPageState extends State<OwnerPage> {
             // Header
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Colors.transparent,
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.store,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'ShoeVault Admin',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Batangas',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
+                  Image.asset(
+                    'assets/pictures/shoevault_logo.png',
+                    height: 100,
+                    width: 180,
                   ),
                 ],
               ),
@@ -328,6 +318,8 @@ class _OwnerPageState extends State<OwnerPage> {
 }
 
 class DashboardPage extends StatefulWidget {
+  const DashboardPage({super.key});
+
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
@@ -854,11 +846,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         SizedBox(width: 8),
                         TextButton(
                           onPressed: _goToToday,
-                          child: Text('Today'),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.blue,
                             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
+                          child: Text('Today'),
                         ),
                       ],
                     ),
@@ -875,12 +867,12 @@ class _DashboardPageState extends State<DashboardPage> {
               final data = getDataForRange();
               
               return GridView.count(
-                crossAxisCount: isMobile ? 2 : 4,
+                crossAxisCount: isMobile ? 1 : 4,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: isMobile ? 1.2 : 1.5,
+                childAspectRatio: isMobile ? 3.5 : 2.2,
                 children: [
               _buildSummaryCard(
                 context,
@@ -920,93 +912,65 @@ class _DashboardPageState extends State<DashboardPage> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: 8),
-          GestureDetector(
-            onPanEnd: (details) {
-              // Detect swipe direction based on velocity
-              if (details.velocity.pixelsPerSecond.dx > 500) {
-                // Swipe right - go to previous period
-                if (_canGoToPrevious()) {
-                  _goToPreviousPeriod();
-                }
-              } else if (details.velocity.pixelsPerSecond.dx < -500) {
-                // Swipe left - go to next period
-                if (_canGoToNext()) {
-                  _goToNextPeriod();
-                }
-              }
-            },
-            child: Container(
-              height: 300, // Fixed height instead of aspect ratio
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: BarChart(
-                key: ValueKey(selectedRange), // Add key for smooth transitions
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: _getMaxYValue(),
-                  barTouchData: BarTouchData(enabled: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        reservedSize: 50, // Increased from 28 to 50
-                        interval: _getYAxisInterval(),
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40, // Added reserved space for bottom labels
-                        getTitlesWidget: (value, meta) {
-                          final labels = getDataForRange()['chartLabels'] as List<String>;
-                          if (value.toInt() >= 0 && value.toInt() < labels.length) {
-                            return Padding(
-                              padding: EdgeInsets.only(top: 8),
-                              child: Text(
-                                labels[value.toInt()],
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                                ),
-                              ),
-                            );
-                          }
-                          return Text('');
-                        },
-                      ),
-                    ),
-                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  gridData: FlGridData(show: true),
-                  borderData: FlBorderData(show: false),
-                  barGroups: _getBarGroups(context),
+          Container(
+            height: 300, // Fixed height instead of aspect ratio
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
                 ),
-              ),
+              ],
             ),
-          ),
-          SizedBox(height: 4),
-          // Swipe hint
-          Center(
-            child: Text(
-              '← Swipe to navigate between periods →',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                fontStyle: FontStyle.italic,
+            child: BarChart(
+              key: ValueKey(selectedRange), // Add key for smooth transitions
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: _getMaxYValue(),
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true, 
+                      reservedSize: 50, // Increased from 28 to 50
+                      interval: _getYAxisInterval(),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40, // Added reserved space for bottom labels
+                      getTitlesWidget: (value, meta) {
+                        final labels = getDataForRange()['chartLabels'] as List<String>;
+                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                          return Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text(
+                              labels[value.toInt()],
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          );
+                        }
+                        return Text('');
+                      },
+                    ),
+                  ),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(show: true),
+                borderData: FlBorderData(show: false),
+                barGroups: _getBarGroups(context),
               ),
             ),
           ),
@@ -1135,6 +1099,8 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 class ReportPage extends StatefulWidget {
+  const ReportPage({super.key});
+
   @override
   State<ReportPage> createState() => _ReportPageState();
 }
@@ -1145,79 +1111,24 @@ class _ReportPageState extends State<ReportPage> {
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   
-  List<Map<String, dynamic>> reservations = [
-    {
-      'id': 'REV-001',
-      'customer': 'John Smith',
-      'email': 'john.smith@email.com',
-      'shoe': 'Nike Air Max 270',
-      'size': 'Size 42',
-      'date': '2025-06-28',
-      'pickup': '2025-06-27',
-      'status': 'Cancelled',
-      'days': 'Cancelled - 7 days overdue'
-    },
-    {
-      'id': 'REV-002',
-      'customer': 'Sarah Johnson',
-      'email': 'sarah.johnson@email.com',
-      'shoe': 'Adidas Ultraboost 22',
-      'size': 'Size 38',
-      'date': '2025-06-28',
-      'pickup': '2025-07-02',
-      'status': 'Cancelled',
-      'days': 'Cancelled - 6 days overdue'
-    },
-    {
-      'id': 'REV-003',
-      'customer': 'Mike Brown',
-      'email': 'mike.brown@email.com',
-      'shoe': 'Converse Chuck Taylor',
-      'size': 'Size 44',
-      'date': '2025-06-28',
-      'pickup': '2025-07-01',
-      'status': 'Pending',
-      'days': 'Pending - Expires today'
-    },
-    {
-      'id': 'REV-004',
-      'customer': 'Emma Davis',
-      'email': 'emma.davis@email.com',
-      'shoe': 'Vans Old Skool',
-      'size': 'Size 36',
-      'date': '2025-06-16',
-      'pickup': '2025-06-22',
-      'status': 'Cancelled',
-      'days': 'Cancelled - 14 days overdue'
-    },
-    {
-      'id': 'REV-005',
-      'customer': 'Ivan Miguel Doller',
-      'email': 'ivanmigueldoller@email.com',
-      'shoe': 'Nike Air Force 1',
-      'size': 'Size 41',
-      'date': '2025-06-16',
-      'pickup': '2025-06-22',
-      'status': 'Completed',
-      'days': 'Completed successfully'
-    },
-    {
-      'id': 'REV-006',
-      'customer': 'Dan Francis Belarmino',
-      'email': 'danfrancisbelarmino@email.com',
-      'shoe': 'Nike Air Force 1',
-      'size': 'Size 41',
-      'date': '2025-06-22',
-      'pickup': '2025-06-30',
-      'status': 'Pending',
-      'days': 'Pending - Expiring in 2 days'
-    },
-  ];
+  List<Map<String, dynamic>> reservations = [];
 
-  void _deleteReservation(String reservationId) {
+  @override
+  void initState() {
+    super.initState();
+    _loadReservations();
+  }
+
+  Future<void> _loadReservations() async {
+    final data = await ReservationService.getReservationsAsMap();
     setState(() {
-      reservations.removeWhere((reservation) => reservation['id'] == reservationId);
+      reservations = data;
     });
+  }
+
+  void _deleteReservation(String reservationId) async {
+    await ReservationService.deleteReservation(reservationId);
+    await _loadReservations();
     
     // Show a confirmation message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -1229,20 +1140,29 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  void _markAsCompleted(String reservationId) {
-    setState(() {
-      final reservationIndex = reservations.indexWhere((reservation) => reservation['id'] == reservationId);
-      if (reservationIndex != -1) {
-        reservations[reservationIndex]['status'] = 'Completed';
-        reservations[reservationIndex]['days'] = 'Completed successfully';
-      }
-    });
+  void _markAsCompleted(String reservationId) async {
+    await ReservationService.updateReservationStatus(reservationId, 'Completed', 'Completed successfully');
+    await _loadReservations();
     
     // Show a confirmation message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Reservation $reservationId marked as completed'),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _markAsCancelled(String reservationId) async {
+    await ReservationService.updateReservationStatus(reservationId, 'Cancelled', 'Cancelled by admin');
+    await _loadReservations();
+    
+    // Show a confirmation message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reservation $reservationId has been cancelled'),
+        backgroundColor: Colors.red,
         duration: Duration(seconds: 2),
       ),
     );
@@ -1300,6 +1220,32 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
+  void _showCancellationConfirmation(String reservationId, String customerName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Cancel Reservation'),
+          content: Text('Are you sure you want to cancel the reservation for $customerName?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _markAsCancelled(reservationId);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.orange),
+              child: Text('Cancel Reservation'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   List<Map<String, dynamic>> get filteredReservations {
     List<Map<String, dynamic>> filtered = reservations;
     
@@ -1314,6 +1260,7 @@ class _ReportPageState extends State<ReportPage> {
         final query = searchQuery.toLowerCase();
         return reservation['customer'].toLowerCase().contains(query) ||
                reservation['email'].toLowerCase().contains(query) ||
+               reservation['phone'].toLowerCase().contains(query) ||
                reservation['shoe'].toLowerCase().contains(query) ||
                reservation['id'].toLowerCase().contains(query) ||
                reservation['size'].toLowerCase().contains(query);
@@ -1364,7 +1311,7 @@ class _ReportPageState extends State<ReportPage> {
         children: [
           // Title
           Text(
-            'Reservation Report',
+            'Reservation Cancellation Report',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -1385,14 +1332,15 @@ class _ReportPageState extends State<ReportPage> {
           LayoutBuilder(
             builder: (context, constraints) {
               bool isMobile = constraints.maxWidth < 600;
+              bool isTablet = constraints.maxWidth < 1000;
               
               return GridView.count(
-                crossAxisCount: isMobile ? 2 : 4,
+                crossAxisCount: isMobile ? 2 : isTablet ? 3 : 4,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: isMobile ? 1.3 : 1.5,
+                mainAxisSpacing: isMobile ? 8 : constraints.maxWidth * 0.02,
+                crossAxisSpacing: isMobile ? 8 : constraints.maxWidth * 0.02,
+                childAspectRatio: isMobile ? 1.1 : isTablet ? 1.4 : 1.5,
                 children: [
                   _buildStatCard(
                     icon: Icons.warning,
@@ -1432,7 +1380,7 @@ class _ReportPageState extends State<ReportPage> {
           Row(
             children: [
               Expanded(
-                child: TextField(
+                child:                 TextField(
                   controller: _searchController,
                   onChanged: (value) {
                     setState(() {
@@ -1440,7 +1388,7 @@ class _ReportPageState extends State<ReportPage> {
                     });
                   },
                   decoration: InputDecoration(
-                    hintText: 'Search by customer, email, shoe, or ID...',
+                    hintText: 'Search by customer, email, phone, shoe, or ID...',
                     prefixIcon: Icon(Icons.search),
                     suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
@@ -1493,6 +1441,26 @@ class _ReportPageState extends State<ReportPage> {
                   padding: EdgeInsets.symmetric(horizontal: 12),
                 ),
               ),
+              SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await _loadReservations();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Data refreshed successfully'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                },
+                icon: Icon(Icons.refresh),
+                label: Text('Refresh'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
             ],
           ),
           SizedBox(height: 16),
@@ -1521,16 +1489,23 @@ class _ReportPageState extends State<ReportPage> {
           // Data Table
           LayoutBuilder(
             builder: (context, constraints) {
-              bool isMobile = constraints.maxWidth < 800;
-              
               if (filteredReservations.isEmpty) {
                 return _buildEmptyState();
               }
               
-              if (isMobile) {
+              // Responsive breakpoints
+              if (constraints.maxWidth < 800) {
                 return _buildMobileReservationList();
+              } else if (constraints.maxWidth < 1200) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _buildTabletReservationTable(constraints.maxWidth),
+                );
               } else {
-                return _buildDesktopReservationTable();
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _buildDesktopReservationTable(constraints.maxWidth),
+                );
               }
             },
           ),
@@ -1598,6 +1573,8 @@ class _ReportPageState extends State<ReportPage> {
     required Color bgColor,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
     
     // Tone down the background colors for dark mode
     Color adjustedBgColor = isDark 
@@ -1605,33 +1582,43 @@ class _ReportPageState extends State<ReportPage> {
         : bgColor;
     
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : screenWidth * 0.02),
       decoration: BoxDecoration(
         color: adjustedBgColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: color, size: 24),
-          SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.titleLarge?.color,
+          Icon(
+            icon, 
+            color: color, 
+            size: isMobile ? 24 : screenWidth * 0.025,
+          ),
+          SizedBox(height: isMobile ? 6 : screenWidth * 0.01),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: isMobile ? 20 : screenWidth * 0.025,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
+          SizedBox(height: isMobile ? 2 : screenWidth * 0.005),
+          Flexible(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: isMobile ? 12 : screenWidth * 0.012,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1651,13 +1638,18 @@ class _ReportPageState extends State<ReportPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      reservation['id'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue[600],
+                    Expanded(
+                      child: Text(
+                        reservation['id'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[600],
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    SizedBox(width: 8),
                     _buildStatusChip(reservation['status']),
                   ],
                 ),
@@ -1667,13 +1659,21 @@ class _ReportPageState extends State<ReportPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
                   ),
                 ),
                 Text(
                   reservation['email'],
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+                Text(
+                  reservation['phone'],
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -1681,32 +1681,36 @@ class _ReportPageState extends State<ReportPage> {
                   '${reservation['shoe']} - ${reservation['size']}',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.titleMedium?.color,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Date: ${reservation['date']}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Date: ${reservation['date']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
                           ),
-                        ),
-                        Text(
-                          'Pickup: ${reservation['pickup']}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                          Text(
+                            'Pickup: ${reservation['pickup']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    SizedBox(width: 8),
                     Text(
                       reservation['days'],
                       style: TextStyle(
@@ -1721,7 +1725,7 @@ class _ReportPageState extends State<ReportPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (reservation['status'] == 'Pending')
+                    if (reservation['status'] == 'Pending') ...[
                       IconButton(
                         onPressed: () => _showCompletionConfirmation(
                           reservation['id'],
@@ -1731,12 +1735,22 @@ class _ReportPageState extends State<ReportPage> {
                         iconSize: 20,
                         tooltip: 'Mark as Completed',
                       ),
+                      IconButton(
+                        onPressed: () => _showCancellationConfirmation(
+                          reservation['id'],
+                          reservation['customer'],
+                        ),
+                        icon: Icon(Icons.cancel, color: Colors.orange),
+                        iconSize: 20,
+                        tooltip: 'Cancel Reservation',
+                      ),
+                    ],
                     IconButton(
                       onPressed: () => _showDeleteConfirmation(
                         reservation['id'],
                         reservation['customer'],
                       ),
-                      icon: Icon(Icons.close, color: Colors.red),
+                      icon: Icon(Icons.delete, color: Colors.red),
                       iconSize: 20,
                       tooltip: 'Delete Reservation',
                     ),
@@ -1750,98 +1764,205 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Widget _buildDesktopReservationTable() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+  Widget _buildTabletReservationTable(double screenWidth) {
+    return SizedBox(
+      width: screenWidth,
       child: DataTable(
-        columnSpacing: 20,
+        columnSpacing: screenWidth * 0.015, // Reduced spacing for better fit
         headingTextStyle: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.titleMedium?.color,
+          color: Colors.black87,
+          fontSize: screenWidth * 0.011, // Slightly smaller font
         ),
         columns: [
-          DataColumn(label: Text('RESERVATION ID')),
-          DataColumn(label: Text('CUSTOMER')),
-          DataColumn(label: Text('SHOE DETAILS')),
-          DataColumn(label: Text('RESERVATION DATE')),
-          DataColumn(label: Text('EXPECTED PICKUP')),
-          DataColumn(label: Text('STATUS')),
-          DataColumn(label: Text('ACTIONS')),
+          DataColumn(
+            label: Expanded(
+              child: Text('ID'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('CUSTOMER'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('PHONE'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('SHOE'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('DATE'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('STATUS'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('ACTIONS'),
+            ),
+            numeric: false,
+          ),
         ],
         rows: filteredReservations.map((reservation) {
           return DataRow(
             cells: [
               DataCell(
-                Text(
-                  reservation['id'],
-                  style: TextStyle(
-                    color: Colors.blue[600],
-                    fontWeight: FontWeight.w500,
+                SizedBox(
+                  width: screenWidth * 0.07,
+                  child: Text(
+                    reservation['id'],
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontWeight: FontWeight.w500,
+                      fontSize: screenWidth * 0.010,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
               DataCell(
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      reservation['customer'],
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    Text(
-                      reservation['email'],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                SizedBox(
+                  width: screenWidth * 0.18,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        reservation['customer'],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500, 
+                          fontSize: screenWidth * 0.011,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      Text(
+                        reservation['email'],
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.009,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               DataCell(
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(reservation['shoe']),
-                    Text(
-                      reservation['size'],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+                SizedBox(
+                  width: screenWidth * 0.10,
+                  child: Text(
+                    reservation['phone'],
+                    style: TextStyle(fontSize: screenWidth * 0.010),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-              DataCell(Text(reservation['date'])),
-              DataCell(Text(reservation['pickup'])),
-              DataCell(_buildStatusChip(reservation['status'])),
               DataCell(
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (reservation['status'] == 'Pending')
+                SizedBox(
+                  width: screenWidth * 0.16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        reservation['shoe'],
+                        style: TextStyle(fontSize: screenWidth * 0.011),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        reservation['size'],
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.009,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              DataCell(
+                SizedBox(
+                  width: screenWidth * 0.10,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        reservation['date'],
+                        style: TextStyle(fontSize: screenWidth * 0.010),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        reservation['pickup'],
+                        style: TextStyle(
+                          fontSize: screenWidth * 0.009,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              DataCell(
+                SizedBox(
+                  width: screenWidth * 0.07,
+                  child: _buildStatusChip(reservation['status']),
+                ),
+              ),
+              DataCell(
+                SizedBox(
+                  width: screenWidth * 0.15,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (reservation['status'] == 'Pending') ...[
+                        IconButton(
+                          onPressed: () => _showCompletionConfirmation(
+                            reservation['id'],
+                            reservation['customer'],
+                          ),
+                          icon: Icon(Icons.check, color: Colors.green),
+                          iconSize: screenWidth * 0.014,
+                          tooltip: 'Mark as Completed',
+                        ),
+                        IconButton(
+                          onPressed: () => _showCancellationConfirmation(
+                            reservation['id'],
+                            reservation['customer'],
+                          ),
+                          icon: Icon(Icons.cancel, color: Colors.orange),
+                          iconSize: screenWidth * 0.014,
+                          tooltip: 'Cancel Reservation',
+                        ),
+                      ],
                       IconButton(
-                        onPressed: () => _showCompletionConfirmation(
+                        onPressed: () => _showDeleteConfirmation(
                           reservation['id'],
                           reservation['customer'],
                         ),
-                        icon: Icon(Icons.check, color: Colors.green),
-                        iconSize: 20,
-                        tooltip: 'Mark as Completed',
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        iconSize: screenWidth * 0.014,
+                        tooltip: 'Delete Reservation',
                       ),
-                    IconButton(
-                      onPressed: () => _showDeleteConfirmation(
-                        reservation['id'],
-                        reservation['customer'],
-                      ),
-                      icon: Icon(Icons.close, color: Colors.red),
-                      iconSize: 20,
-                      tooltip: 'Delete Reservation',
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -1851,8 +1972,220 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
+  Widget _buildDesktopReservationTable(double screenWidth) {
+    return SizedBox(
+      width: screenWidth,
+      child: DataTable(
+        columnSpacing: screenWidth * 0.012, // Reduced spacing for better fit
+        headingTextStyle: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+          fontSize: screenWidth * 0.009, // Slightly smaller font
+        ),
+        columns: [
+          DataColumn(
+            label: Expanded(
+              child: Text('RESERVATION ID'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('CUSTOMER'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('PHONE'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('SHOE DETAILS'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('RESERVATION DATE'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('EXPECTED PICKUP'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('STATUS'),
+            ),
+            numeric: false,
+          ),
+          DataColumn(
+            label: Expanded(
+              child: Text('ACTIONS'),
+            ),
+            numeric: false,
+          ),
+        ],
+        rows: filteredReservations.map((reservation) {
+          return DataRow(
+                          cells: [
+                                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.08,
+                      child: Text(
+                        reservation['id'],
+                        style: TextStyle(
+                          color: Colors.blue[600],
+                          fontWeight: FontWeight.w500,
+                          fontSize: screenWidth * 0.008,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.13,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            reservation['customer'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: screenWidth * 0.008,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            reservation['email'],
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.007,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.08,
+                      child: Text(
+                        reservation['phone'],
+                        style: TextStyle(fontSize: screenWidth * 0.008),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            reservation['shoe'],
+                            style: TextStyle(fontSize: screenWidth * 0.008),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            reservation['size'],
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.007,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.08,
+                      child: Text(
+                        reservation['date'],
+                        style: TextStyle(fontSize: screenWidth * 0.008),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.08,
+                      child: Text(
+                        reservation['pickup'],
+                        style: TextStyle(fontSize: screenWidth * 0.008),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.06,
+                      child: _buildStatusChip(reservation['status']),
+                    ),
+                  ),
+                  DataCell(
+                    SizedBox(
+                      width: screenWidth * 0.18,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (reservation['status'] == 'Pending') ...[
+                            IconButton(
+                              onPressed: () => _showCompletionConfirmation(
+                                reservation['id'],
+                                reservation['customer'],
+                              ),
+                              icon: Icon(Icons.check, color: Colors.green),
+                              iconSize: screenWidth * 0.011,
+                              tooltip: 'Mark as Completed',
+                            ),
+                            IconButton(
+                              onPressed: () => _showCancellationConfirmation(
+                                reservation['id'],
+                                reservation['customer'],
+                              ),
+                              icon: Icon(Icons.cancel, color: Colors.orange),
+                              iconSize: screenWidth * 0.011,
+                              tooltip: 'Cancel Reservation',
+                            ),
+                          ],
+                          IconButton(
+                            onPressed: () => _showDeleteConfirmation(
+                              reservation['id'],
+                              reservation['customer'],
+                            ),
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            iconSize: screenWidth * 0.011,
+                            tooltip: 'Delete Reservation',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildStatusChip(String status) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
     Color color;
     Color backgroundColor;
     
@@ -1880,17 +2213,24 @@ class _ReportPageState extends State<ReportPage> {
     }
     
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 8 : screenWidth * 0.006, 
+        vertical: isMobile ? 4 : screenWidth * 0.003,
+      ),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         status,
         style: TextStyle(
           color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
+          fontSize: isMobile ? 12 : screenWidth * 0.009,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
