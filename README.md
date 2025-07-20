@@ -44,6 +44,7 @@ samples, guidance on mobile development, and a full API reference.
   - Use **1234** for the password
 
 2. Accessing product catalog: push the button on the login page **Go to Reservation**. This will Redirect you to a landing page for our reservation system.
+   
 3. Click start a reservation, then explore the rest.
 
 # Who to Contact about concerns about the Project:
