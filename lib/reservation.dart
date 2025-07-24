@@ -2106,7 +2106,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
               ListTile(
                 title: Text(selectedDate == null
                     ? 'Select Pickup Date'
-                    : 'Pickup Date: ${selectedDate!.toLocal()}'.split(' ')[0]),
+                    : 'Pickup Date: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'),
                 trailing: Icon(Icons.calendar_today),
                 onTap: () => _pickDate(context),
               ),
@@ -2166,14 +2166,24 @@ class ReceiptScreen extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.popUntil(context, (route) => route.isFirst);
+            // Navigate to Landing Page (Home)
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => LandingPage()),
+              (route) => false,
+            );
           },
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.home),
             onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
+              // Navigate to Landing Page (Home)
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LandingPage()),
+                (route) => false,
+              );
             },
             tooltip: 'Go to Home',
           ),
@@ -2331,46 +2341,31 @@ class ReceiptScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: colorScheme.onSurface.withOpacity(0.7))),
                 SizedBox(height: 20),
                 
-                // Navigation buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(context); // Go back to previous screen
-                        },
-                        icon: Icon(Icons.arrow_back),
-                        label: Text('Back to Catalog'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.surface,
-                          foregroundColor: colorScheme.primary,
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: colorScheme.primary),
-                          ),
+                // Navigation button
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.6,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to Landing Page (Home)
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => LandingPage()),
+                          (route) => false,
+                        );
+                      },
+                      icon: Icon(Icons.home),
+                      label: Text('Go to Home'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.popUntil(context, (route) => route.isFirst);
-                        },
-                        icon: Icon(Icons.home),
-                        label: Text('Go to Home'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
