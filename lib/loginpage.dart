@@ -114,7 +114,7 @@ class LoginScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Access the ShoeVault admin dashboard to manage inventory, users, and reports.',
+                          'Access the ShoeVault admin dashboard to manage dashboard and reports.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: (MediaQuery.of(context).size.width * 0.03).clamp(12.0, 18.0),

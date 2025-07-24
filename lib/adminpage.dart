@@ -185,7 +185,7 @@ class _OwnerPageState extends State<OwnerPage> {
 
   final List<Map<String, dynamic>> _drawerItems = [
     {'icon': Icons.analytics, 'title' : 'Dashboard'},
-    {'icon': Icons.assignment, 'title' : 'Cancellation Report'}
+    {'icon': Icons.assignment, 'title' : 'Reservation Report'}
   ];
 
   void _onSelectItem(int index) {
@@ -864,15 +864,17 @@ class _DashboardPageState extends State<DashboardPage> {
           LayoutBuilder(
             builder: (context, constraints) {
               bool isMobile = constraints.maxWidth < 600;
+              bool isSmallMobile = constraints.maxWidth < 400;
+              bool isTinyMobile = constraints.maxWidth < 350;
               final data = getDataForRange();
               
               return GridView.count(
-                crossAxisCount: isMobile ? 1 : 4,
+                crossAxisCount: 2, // Always 2x2 grid
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: isMobile ? 3.5 : 2.2,
+                mainAxisSpacing: isTinyMobile ? 6 : isSmallMobile ? 8 : 12,
+                crossAxisSpacing: isTinyMobile ? 6 : isSmallMobile ? 8 : 12,
+                childAspectRatio: isTinyMobile ? 1.2 : isSmallMobile ? 1.3 : isMobile ? 1.6 : 2.5, // More square for tiny screens
                 children: [
               _buildSummaryCard(
                 context,
@@ -912,65 +914,157 @@ class _DashboardPageState extends State<DashboardPage> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: 8),
-          Container(
-            height: 300, // Fixed height instead of aspect ratio
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).brightness == Brightness.dark 
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.grey.withOpacity(0.1),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: BarChart(
-              key: ValueKey(selectedRange), // Add key for smooth transitions
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: _getMaxYValue(),
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true, 
-                      reservedSize: 50, // Increased from 28 to 50
-                      interval: _getYAxisInterval(),
-                    ),
+          GestureDetector(
+            onPanEnd: (details) {
+              // Detect swipe direction based on velocity
+              if (details.velocity.pixelsPerSecond.dx > 800) {
+                // Swipe right - go to previous period
+                if (_canGoToPrevious()) {
+                  _goToPreviousPeriod();
+                }
+              } else if (details.velocity.pixelsPerSecond.dx < -800) {
+                // Swipe left - go to next period
+                if (_canGoToNext()) {
+                  _goToNextPeriod();
+                }
+              }
+            },
+            child: Container(
+              height: 300, // Fixed height instead of aspect ratio
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40, // Added reserved space for bottom labels
-                      getTitlesWidget: (value, meta) {
-                        final labels = getDataForRange()['chartLabels'] as List<String>;
-                        if (value.toInt() >= 0 && value.toInt() < labels.length) {
-                          return Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Text(
-                              labels[value.toInt()],
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                ],
+              ),
+              child: Stack(
+                children: [
+                  BarChart(
+                    key: ValueKey(selectedRange), // Add key for smooth transitions
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: _getMaxYValue(),
+                      barTouchData: BarTouchData(
+                        enabled: true,
+                        touchTooltipData: BarTouchTooltipData(
+                          tooltipBgColor: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.grey[800]!.withOpacity(0.95)
+                              : Colors.grey[700]!.withOpacity(0.95),
+                          tooltipRoundedRadius: 8,
+                          tooltipPadding: EdgeInsets.all(8),
+                          tooltipMargin: 8,
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final labels = getDataForRange()['chartLabels'] as List<String>;
+                            final label = groupIndex < labels.length ? labels[groupIndex] : '';
+                            final value = rod.toY.round();
+                            final isReservation = rodIndex == 0;
+                            
+                            return BarTooltipItem(
+                              '$label\n',
+                              TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
                               ),
-                            ),
-                          );
-                        }
-                        return Text('');
-                      },
+                              children: [
+                                TextSpan(
+                                  text: '${isReservation ? "Reservations" : "Pickups"}: $value',
+                                  style: TextStyle(
+                                    color: isReservation ? Colors.blue[200] : Colors.green[200],
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        touchCallback: (FlTouchEvent event, barTouchResponse) {
+                          // Optional: Add haptic feedback on touch
+                          if (event is FlTapUpEvent && barTouchResponse?.spot != null) {
+                            // You can add vibration/haptic feedback here if needed
+                            // HapticFeedback.lightImpact();
+                          }
+                        },
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true, 
+                            reservedSize: 50, // Increased from 28 to 50
+                            interval: _getYAxisInterval(),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40, // Added reserved space for bottom labels
+                            getTitlesWidget: (value, meta) {
+                              final labels = getDataForRange()['chartLabels'] as List<String>;
+                              if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                                return Padding(
+                                  padding: EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    labels[value.toInt()],
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return Text('');
+                            },
+                          ),
+                        ),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      gridData: FlGridData(show: true),
+                      borderData: FlBorderData(show: false),
+                      barGroups: _getBarGroups(context),
                     ),
                   ),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                gridData: FlGridData(show: true),
-                borderData: FlBorderData(show: false),
-                barGroups: _getBarGroups(context),
+                  // Swipe indicator overlay
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.swipe,
+                            size: 14,
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Swipe to navigate',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -996,6 +1090,10 @@ class _DashboardPageState extends State<DashboardPage> {
     required String colorScheme,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isSmallMobile = screenWidth < 400;
+    final isTinyMobile = screenWidth < 350;
     
     Color backgroundColor;
     Color iconColor;
@@ -1022,36 +1120,61 @@ class _DashboardPageState extends State<DashboardPage> {
         iconColor = Colors.grey;
     }
 
+    // Determine sizes based on screen size
+    double iconSize = isTinyMobile ? 16 : isSmallMobile ? 18 : isMobile ? 20 : 28;
+    double valueFontSize = isTinyMobile ? 14 : isSmallMobile ? 16 : isMobile ? 18 : 20;
+    double labelFontSize = isTinyMobile ? 8 : isSmallMobile ? 9 : isMobile ? 10 : 12;
+    double cardPadding = isTinyMobile ? 6 : isSmallMobile ? 8 : isMobile ? 10 : 16;
+
     return Card(
       color: backgroundColor,
       elevation: 0,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
+      margin: EdgeInsets.zero,
+      child: Container(
+        padding: EdgeInsets.all(cardPadding),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor, size: 32),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value, 
-                    style: TextStyle(
-                      fontSize: 20, 
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.titleLarge?.color,
-                    ),
+            // Icon
+            Icon(
+              icon, 
+              color: iconColor, 
+              size: iconSize,
+            ),
+            SizedBox(height: isTinyMobile ? 2 : 4),
+            
+            // Value with auto-scaling
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value, 
+                  style: TextStyle(
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.titleLarge?.color,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    label, 
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                ],
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
+              ),
+            ),
+            SizedBox(height: isTinyMobile ? 1 : 2),
+            
+            // Label with multiple lines support
+            Flexible(
+              flex: 2,
+              child: Text(
+                label, 
+                style: TextStyle(
+                  fontSize: labelFontSize,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                  height: 1.1, // Tighter line height
+                ),
+                textAlign: TextAlign.center,
+                maxLines: isTinyMobile ? 3 : 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
