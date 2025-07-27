@@ -3,6 +3,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'loginpage.dart' as login;
 import 'reservation_service.dart';
 
+// Gradient definition
+final LinearGradient primaryDarkGradient = LinearGradient(
+  colors: [Color(0xFF0D47A1), Colors.blue],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ReservationService.initializeWithSampleData();
@@ -207,7 +214,17 @@ class _OwnerPageState extends State<OwnerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_drawerItems[_selectedDrawerIndex]['title']), // Dynamic title
+        title: Text(
+          _drawerItems[_selectedDrawerIndex]['title'],
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: primaryDarkGradient,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       drawer: Drawer(
         child: Column(
@@ -864,50 +881,49 @@ class _DashboardPageState extends State<DashboardPage> {
           LayoutBuilder(
             builder: (context, constraints) {
               bool isMobile = constraints.maxWidth < 600;
-              bool isSmallMobile = constraints.maxWidth < 400;
-              bool isTinyMobile = constraints.maxWidth < 350;
+              bool isWide = constraints.maxWidth >= 1000;
               final data = getDataForRange();
               
               return GridView.count(
-                crossAxisCount: 2, // Always 2x2 grid
+                crossAxisCount: isWide ? 4 : 2,
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                mainAxisSpacing: isTinyMobile ? 6 : isSmallMobile ? 8 : 12,
-                crossAxisSpacing: isTinyMobile ? 6 : isSmallMobile ? 8 : 12,
-                childAspectRatio: isTinyMobile ? 1.2 : isSmallMobile ? 1.3 : isMobile ? 1.6 : 2.5, // More square for tiny screens
+                mainAxisSpacing: isMobile ? 6 : 12,
+                crossAxisSpacing: isMobile ? 6 : 12,
+                childAspectRatio: isMobile ? 1.6 : 2.5,
                 children: [
-              _buildSummaryCard(
-                context,
-                icon: Icons.inventory_2,
-                label: 'Total Reservations',
-                value: data['totalReservations'],
-                colorScheme: 'blue',
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.people,
-                label: 'Completed Pickups',
-                value: data['completedPickups'],
-                colorScheme: 'green',
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.access_time,
-                label: 'Pending Pickups',
-                value: data['pendingPickups'],
-                colorScheme: 'orange',
-              ),
-              _buildSummaryCard(
-                context,
-                icon: Icons.trending_up,
-                label: 'Cancelled',
-                value: data['cancelled'],
-                colorScheme: 'red',
-              ),
-            ],
-          );
-        },
-      ),
+                  _buildSummaryCard(
+                    context,
+                    icon: Icons.inventory_2,
+                    label: 'Total Reservations',
+                    value: data['totalReservations'],
+                    colorScheme: 'blue',
+                  ),
+                  _buildSummaryCard(
+                    context,
+                    icon: Icons.people,
+                    label: 'Completed Pickups',
+                    value: data['completedPickups'],
+                    colorScheme: 'green',
+                  ),
+                  _buildSummaryCard(
+                    context,
+                    icon: Icons.access_time,
+                    label: 'Pending Pickups',
+                    value: data['pendingPickups'],
+                    colorScheme: 'orange',
+                  ),
+                  _buildSummaryCard(
+                    context,
+                    icon: Icons.trending_up,
+                    label: 'Cancelled',
+                    value: data['cancelled'],
+                    colorScheme: 'red',
+                  ),
+                ],
+              );
+            },
+          ),
           SizedBox(height: 24),
           Text(
             getDataForRange()['chartTitle'],

@@ -1,6 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'reservation_service.dart';
 import 'stock_service.dart';
+
+// Gradient definition
+final LinearGradient primaryDarkGradient = LinearGradient(
+  colors: [Color(0xFF0D47A1), Colors.blue],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
+// Custom GradientButton widget
+class GradientButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback? onPressed;
+  final double borderRadius;
+  final EdgeInsetsGeometry padding;
+  final bool enabled;
+
+  const GradientButton({
+    super.key,
+    required this.child,
+    required this.onPressed,
+    this.borderRadius = 15,
+    this.padding = const EdgeInsets.symmetric(vertical: 12),
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: enabled ? 1.0 : 0.5,
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(borderRadius),
+          onTap: enabled ? onPressed : null,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: primaryDarkGradient,
+              borderRadius: BorderRadius.circular(borderRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: padding,
+            child: Center(child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -193,7 +251,7 @@ class LandingPage extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 40),
-                            ElevatedButton(
+                            GradientButton(
                               onPressed: () {
                                 Navigator.push(
                                   context,
@@ -218,22 +276,12 @@ class LandingPage extends StatelessWidget {
                                   ),
                                 );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white, // Button background
-                                foregroundColor: colorScheme.primary, // Text color
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: isMobile ? 30 : 40,
-                                    vertical: isMobile ? 15 : 18),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: 5,
-                              ),
                               child: Text(
                                 'Start a Reservation',
                                 style: TextStyle(
                                   fontSize: isMobile ? 14 : 16,
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
@@ -357,7 +405,7 @@ class LandingPage extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        'READY TO RESERVE?',
+                        'READY TO RESERVATION?',
                         style: TextStyle(
                           fontSize: isMobile ? 12 : 14,
                           fontWeight: FontWeight.bold,
@@ -375,7 +423,7 @@ class LandingPage extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 30),
-                      ElevatedButton(
+                      GradientButton(
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -400,22 +448,12 @@ class LandingPage extends StatelessWidget {
                             ),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary, // Button background
-                          foregroundColor: colorScheme.onPrimary, // Text color
-                          padding: EdgeInsets.symmetric(
-                              horizontal: isMobile ? 30 : 40,
-                              vertical: isMobile ? 15 : 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 5,
-                        ),
                         child: Text(
                           'Explore Catalog',
                           style: TextStyle(
                             fontSize: isMobile ? 14 : 16,
                             fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -912,23 +950,35 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     ),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      bool isMobile = constraints.maxWidth < 600;
-                      if (reservedProducts.isNotEmpty && isMobile) {
-                        return ElevatedButton(
-                          child: Text('Proceed to Reservation'),
-                          onPressed: () async {
-                            Navigator.pop(context);
-                            // Navigate to ReservationFormScreen
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ReservationFormScreen(
-                                  selectedProducts: reservedProducts.values.toList(),
-                                  onReservationSuccess: _deductStocksAfterReservation,
+                      // Show button for all non-desktop screens (width < 1000px)
+                      bool isNonDesktop = constraints.maxWidth < 1000;
+                      if (reservedProducts.isNotEmpty && isNonDesktop) {
+                        return Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: GradientButton(
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              // Navigate to ReservationFormScreen
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ReservationFormScreen(
+                                    selectedProducts: reservedProducts.values.toList(),
+                                    onReservationSuccess: _deductStocksAfterReservation,
+                                  ),
                                 ),
+                              );
+                            },
+                            child: Text(
+                              'Proceed to Reservation',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         );
                       }
                       return Container();
@@ -1188,6 +1238,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             if (!isAvailable)
@@ -1196,6 +1247,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w500,
+                                  color: Colors.white,
                                 ),
                               ),
                           ],
@@ -1209,24 +1261,16 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 // Cancel button
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton(
+                  child: GradientButton(
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
+                    borderRadius: 12,
+                    padding: EdgeInsets.symmetric(vertical: 12),
                     child: Text(
                       'Cancel',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -1323,7 +1367,12 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           ),
           centerTitle: false,
           elevation: 0,
-          backgroundColor: colorScheme.primary.withOpacity(0.8),
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: primaryDarkGradient,
+            ),
+          ),
           iconTheme: IconThemeData(color: Colors.white),
           leading: IconButton(
             icon: Icon(Icons.arrow_back, color: Colors.white),
@@ -1412,21 +1461,32 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: categories.map((cat) => Padding(
-                      padding: const EdgeInsets.only(right: 4.0),
-                      child: ChoiceChip(
-                        label: Text(cat, style: TextStyle(
-                          fontFamily: 'Open Sans',
-                          color: selectedCategory == cat ? Colors.white : colorScheme.onSurface,
-                        )),
-                        selected: selectedCategory == cat,
-                        selectedColor: colorScheme.primary,
-                        backgroundColor: colorScheme.surface,
-                        onSelected: (selected) {
+                    children: categories.map((cat) => GestureDetector(
+                      onTap: () {
                           setState(() {
                             selectedCategory = cat;
                           });
                         },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 4),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: selectedCategory == cat ? primaryDarkGradient : null,
+                          color: selectedCategory == cat ? null : colorScheme.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: selectedCategory == cat ? Colors.transparent : colorScheme.primary,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          cat,
+                          style: TextStyle(
+                            color: selectedCategory == cat ? Colors.white : colorScheme.onSurface,
+                            fontFamily: 'Open Sans',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     )).toList(),
                   ),
@@ -1440,7 +1500,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                         itemCount: filteredProducts.length,
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: isMobile ? 2 : 4,
-                          childAspectRatio: 0.65,
+                          childAspectRatio: 0.70,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 30,
                         ),
@@ -1577,6 +1637,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                 },
                 dropdownColor: colorScheme.surface,
                 style: TextStyle(color: colorScheme.onSurface),
+                iconEnabledColor: colorScheme.onSurface,
+                underline: SizedBox(),
               ),
             ],
           ),
@@ -1589,7 +1651,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   itemCount: filteredProducts.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: isMobile ? 2 : 4,
-                    childAspectRatio: 0.65,
+                    childAspectRatio: 0.7,
                     crossAxisSpacing: isMobile ? 12 : 20,
                     mainAxisSpacing: isMobile ? 16 : 30,
                   ),
@@ -1758,18 +1820,13 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                                                 // Add to Reservation button
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
+                          child: GradientButton(
                             onPressed: product.totalStock > 0 ? () {
                               _showSizeSelectionDialog(context, product, index);
                             } : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: product.totalStock > 0 ? colorScheme.primary : Colors.grey,
-                              foregroundColor: Colors.white,
+                            enabled: product.totalStock > 0,
+                            borderRadius: 15,
                               padding: EdgeInsets.symmetric(vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1793,6 +1850,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           style: TextStyle(
                             fontSize: containerWidth * 0.06,
                             fontWeight: FontWeight.w500,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ],
@@ -1911,18 +1969,25 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
               ),
               SizedBox(height: 8),
               ...widget.selectedProducts.map((sp) => Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: Row(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('• ${sp.product.name} (${sp.size}): '),
                     Text(
-                      '${sp.quantity} unit(s)',
+                      '• ${sp.product.name} (${sp.size}): ${sp.quantity} unit(s)',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
                       ),
                     ),
-                    Text(' (${sp.product.getStockForSize(sp.size)} → ${sp.product.getStockForSize(sp.size) - sp.quantity})'),
+                    SizedBox(height: 2),
+                    Text(
+                      '  Stock: ${sp.product.getStockForSize(sp.size)} → ${sp.product.getStockForSize(sp.size) - sp.quantity}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
                   ],
                 ),
               )),
@@ -1986,6 +2051,13 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       appBar: AppBar(
         title: Text('Reserve Pickup'),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: primaryDarkGradient,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -2119,12 +2191,12 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
               ),
               SizedBox(height: 24),
               Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  ),
+                child: GradientButton(
                   onPressed: _submitForm,
-                  child: Text('Submit Pickup Reservation'),
+                  child: Text(
+                    'Submit Pickup Reservation',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               SizedBox(height: 16),
@@ -2136,7 +2208,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
   }
 }
 
-class ReceiptScreen extends StatelessWidget {
+class ReceiptScreen extends StatefulWidget {
   final List<SelectedProduct> selectedProducts;
   final String name;
   final String email;
@@ -2154,22 +2226,209 @@ class ReceiptScreen extends StatelessWidget {
   });
 
   @override
+  State<ReceiptScreen> createState() => _ReceiptScreenState();
+}
+
+class _ReceiptScreenState extends State<ReceiptScreen> {
+  bool isSaving = false;
+
+  Future<void> _saveReceiptAsPDF() async {
+    setState(() {
+      isSaving = true;
+    });
+
+    try {
+      // Create PDF receipt
+      final pdf = pw.Document();
+      
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context pdfContext) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Center(
+                  child: pw.Text(
+                    'SHOEVAULT',
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Center(
+                  child: pw.Text(
+                    'PICKUP RESERVATION RECEIPT',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+                pw.Divider(thickness: 2),
+                pw.SizedBox(height: 20),
+                
+                // Store Info
+                pw.Text(
+                  'Store Information:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+                pw.Text('Manghinao, Bauan, Batangas'),
+                pw.Text('Contact: 0917-123-4567'),
+                pw.Text('Email: shoevaultbats@gmail.com'),
+                pw.SizedBox(height: 15),
+                
+                // Customer Info
+                pw.Text(
+                  'Customer Information:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+                pw.Text('Name: ${widget.name}'),
+                pw.Text('Phone: ${widget.phone}'),
+                pw.Text('Email: ${widget.email}'),
+                pw.SizedBox(height: 15),
+                
+                // Pickup Info
+                pw.Text(
+                  'Pickup Details:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+                pw.Text('Date: ${widget.date.toLocal()}'.split(' ')[0]),
+                pw.Text('Time: ${widget.time.hour.toString().padLeft(2, '0')}:${widget.time.minute.toString().padLeft(2, '0')}'),
+                pw.SizedBox(height: 15),
+                
+                // Items
+                pw.Text(
+                  'Reserved Items:',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                ),
+                pw.Divider(),
+                
+                ...widget.selectedProducts.map((sp) => pw.Padding(
+                  padding: pw.EdgeInsets.symmetric(vertical: 5),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Expanded(
+                        child: pw.Text('${sp.product.name} (${sp.size}) x${sp.quantity}'),
+                      ),
+                      pw.Text('₱${(sp.product.price * sp.quantity).toStringAsFixed(2)}'),
+                    ],
+                  ),
+                )).toList(),
+                
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                
+                // Total
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'TOTAL:',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                    ),
+                    pw.Text(
+                      '₱${widget.selectedProducts.fold(0.0, (sum, sp) => sum + (sp.product.price * sp.quantity)).toStringAsFixed(2)}',
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                
+                pw.SizedBox(height: 20),
+                pw.Text(
+                  'Please present this receipt when picking up your items.',
+                  style: pw.TextStyle(fontStyle: pw.FontStyle.italic),
+                ),
+                pw.Text(
+                  'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                  style: pw.TextStyle(fontSize: 10),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      // Save the PDF
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: 'ShoeVault_Receipt_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Receipt saved as PDF successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save receipt: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    double total = selectedProducts.fold(0, (sum, sp) => sum + (sp.product.price * sp.quantity));
+    double total = widget.selectedProducts.fold(0, (sum, sp) => sum + (sp.product.price * sp.quantity));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Reservation Ticket'),
+        title: Text(
+          'Reservation Ticket',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: primaryDarkGradient,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             // Navigate to Landing Page (Home)
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => LandingPage()),
+              MaterialPageRoute(builder: (context) => MyApp()),
               (route) => false,
             );
           },
@@ -2181,7 +2440,7 @@ class ReceiptScreen extends StatelessWidget {
               // Navigate to Landing Page (Home)
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => LandingPage()),
+                MaterialPageRoute(builder: (context) => MyApp()),
                 (route) => false,
               );
             },
@@ -2259,7 +2518,7 @@ class ReceiptScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Name:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                    Text(name, style: TextStyle(color: colorScheme.onSurface)),
+                    Text(widget.name, style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 4),
@@ -2267,7 +2526,7 @@ class ReceiptScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Phone:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                    Text(phone, style: TextStyle(color: colorScheme.onSurface)),
+                    Text(widget.phone, style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 4),
@@ -2275,7 +2534,7 @@ class ReceiptScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Email:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                    Flexible(child: Text(email, overflow: TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurface))),
+                    Flexible(child: Text(widget.email, overflow: TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurface))),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -2292,7 +2551,7 @@ class ReceiptScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Date:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                    Text('${date.toLocal()}'.split(' ')[0], style: TextStyle(color: colorScheme.onSurface)),
+                    Text('${widget.date.toLocal()}'.split(' ')[0], style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 4),
@@ -2300,7 +2559,7 @@ class ReceiptScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Time:', style: TextStyle(fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                    Text(time.format(context), style: TextStyle(color: colorScheme.onSurface)),
+                    Text(widget.time.format(context), style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -2313,7 +2572,7 @@ class ReceiptScreen extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
                 ),
                 SizedBox(height: 8),
-                ...selectedProducts.map((sp) => Padding(
+                ...widget.selectedProducts.map((sp) => Padding(
                   padding: EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2341,31 +2600,69 @@ class ReceiptScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: colorScheme.onSurface.withOpacity(0.7))),
                 SizedBox(height: 20),
                 
-                // Navigation button
-                Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Navigate to Landing Page (Home)
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => LandingPage()),
-                          (route) => false,
-                        );
-                      },
-                      icon: Icon(Icons.home),
-                      label: Text('Go to Home'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Save button
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: GradientButton(
+                          onPressed: isSaving ? null : _saveReceiptAsPDF,
+                          enabled: !isSaving,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (isSaving)
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              else
+                                Icon(Icons.save, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                isSaving ? 'Saving...' : 'Save',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    
+                    // Go to Home button
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(left: 8),
+                        child: GradientButton(
+                          onPressed: () {
+                            // Navigate to Landing Page (Home)
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => MyApp()),
+                              (route) => false,
+                            );
+                          },
+                          child: Text(
+                            'Go to Home',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
